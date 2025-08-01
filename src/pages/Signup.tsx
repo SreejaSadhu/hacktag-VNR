@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Sparkles, Eye, EyeOff } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+
 
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
@@ -17,7 +17,7 @@ export default function Signup() {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,21 +28,13 @@ export default function Signup() {
 
     // Validate required fields
     if (!firstName || !lastName || !email || !password) {
-      toast({
-        title: "Signup Failed",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
+
       setIsLoading(false);
       return;
     }
 
     if (!agreeToTerms) {
-      toast({
-        title: "Signup Failed",
-        description: "Please agree to the Terms of Service and Privacy Policy.",
-        variant: "destructive",
-      });
+
       setIsLoading(false);
       return;
     }
@@ -56,10 +48,7 @@ export default function Signup() {
       lastName: lastName
     }));
 
-    toast({
-      title: "Account Created!",
-      description: "Welcome to Boostly! Your account has been created successfully.",
-    });
+
 
     // Redirect to dashboard
     navigate('/dashboard');

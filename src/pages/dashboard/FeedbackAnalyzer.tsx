@@ -22,7 +22,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { geminiService } from "@/lib/gemini";
-import { toast } from "sonner";
+
 
 interface FeedbackAnalysis {
   sentiment: {
@@ -62,7 +62,7 @@ export default function FeedbackAnalyzer() {
     );
     
     if (validFiles.length !== files.length) {
-      toast.error('Some files were skipped. Only .txt and .csv files are supported.');
+      
     }
     
     setUploadedFiles(prev => [...prev, ...validFiles]);
@@ -83,7 +83,7 @@ export default function FeedbackAnalyzer() {
 
   const analyzeFeedback = async () => {
     if (!feedback.trim() && uploadedFiles.length === 0) {
-      toast.error('Please add some feedback to analyze');
+
       return;
     }
 
@@ -100,7 +100,7 @@ export default function FeedbackAnalyzer() {
           allFeedback += '\n\n' + fileContent;
         } catch (error) {
           console.error(`Error reading file ${file.name}:`, error);
-          toast.error(`Failed to read file: ${file.name}`);
+  
         }
       }
 
@@ -168,10 +168,10 @@ Be specific and provide practical, actionable insights for a business owner. Ret
       setAnalysis(analysisData);
       setHasAnalyzed(true);
       
-      toast.success('Feedback analysis completed successfully!');
+      
     } catch (error) {
       console.error('Error analyzing feedback:', error);
-      toast.error('Failed to analyze feedback. Please try again.');
+      
     } finally {
       setIsAnalyzing(false);
     }

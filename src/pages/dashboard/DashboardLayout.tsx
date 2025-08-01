@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Sidebar } from "@/components/layout/Sidebar";
+import LiveChat from "@/components/live-chat/LiveChat";
 
 export default function DashboardLayout() {
   return (
@@ -12,6 +13,7 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+      <LiveChat />
     </div>
   );
 }
