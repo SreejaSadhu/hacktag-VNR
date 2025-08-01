@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,65 +8,111 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  Users, 
-  Heart, 
-  MessageCircle, 
+import {
+  Users,
+  Heart,
   ExternalLink,
   Star,
   MapPin,
   Instagram,
   Youtube,
-  Twitter
+  Twitter,
 } from "lucide-react";
+
+type Influencer = {
+  id: number;
+  name: string;
+  handle: string;
+  avatar: string;
+  followers: string;
+  engagement: string;
+  niche: string;
+  location: string;
+  match_score: number;
+  platforms: string; // comma-separated
+  bio: string;
+  tags: string; // comma-separated
+  profile_url: string;
+};
 
 export default function InfluencerMatch() {
   const [activeTab, setActiveTab] = useState("brand");
+  const [influencerResults, setInfluencerResults] = useState<Influencer[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const influencerResults = [
-    {
-      id: 1,
-      name: "Sarah Food Blog",
-      handle: "@sarahfoodblog",
-      avatar: "/api/placeholder/60/60",
-      followers: "45.2K",
-      engagement: "8.4%",
-      niche: "Food & Cooking",
-      location: "San Francisco, CA",
-      matchScore: 95,
-      platforms: ["instagram", "youtube"],
-      bio: "Sharing delicious recipes and food adventures! 🍕 Passionate about sustainable cooking and local ingredients.",
-      tags: ["Food", "Recipes", "Sustainable", "Local"]
-    },
-    {
-      id: 2,
-      name: "Mike's Kitchen",
-      handle: "@mikeskitchen",
-      avatar: "/api/placeholder/60/60", 
-      followers: "28.7K",
-      engagement: "6.8%",
-      niche: "Food & Lifestyle",
-      location: "Portland, OR",
-      matchScore: 87,
-      platforms: ["instagram", "twitter"],
-      bio: "Home cook sharing simple, delicious meals. Father of 2, food lover, weekend baker.",
-      tags: ["HomeCooking", "Simple", "Family", "Baking"]
-    },
-    {
-      id: 3,
-      name: "Foodie Adventures",
-      handle: "@foodieadventures",
-      avatar: "/api/placeholder/60/60",
-      followers: "62.1K", 
-      engagement: "9.2%",
-      niche: "Food & Travel",
-      location: "Los Angeles, CA",
-      matchScore: 82,
-      platforms: ["instagram", "youtube", "twitter"],
-      bio: "Exploring the world one bite at a time 🌎 Food photographer and travel enthusiast.",
-      tags: ["Travel", "Photography", "Foodie", "Adventure"]
+  // Influencer signup form state
+  const [signupForm, setSignupForm] = useState({
+    name: "",
+    handle: "",
+    avatar: "https://api.dicebear.com/7.x/identicon/svg?seed=" + Math.random(), // placeholder
+    followers: "",
+    engagement: "",
+    niche: "",
+    location: "",
+    match_score: 80,
+    platforms: "",
+    bio: "",
+    tags: "",
+    profile_url: "",
+  });
+
+  // Fetch influencers from Supabase
+  useEffect(() => {
+    setLoading(true);
+    supabase
+      .from("influencers")
+      .select("*")
+      .then(({ data, error }) => {
+        if (error) setError(error.message);
+        else setInfluencerResults(data || []);
+        setLoading(false);
+      });
+  }, []);
+
+  // Handle influencer signup form changes
+  const handleSignupChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setSignupForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Handle influencer signup form submit
+  const handleSignupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    // Convert platforms and tags to comma-separated strings if needed
+    const formToSend = {
+      ...signupForm,
+      platforms: signupForm.platforms,
+      tags: signupForm.tags,
+    };
+    const { error } = await supabase.from("influencers").insert([formToSend]);
+    if (error) {
+      setError(error.message);
+    } else {
+      alert("Thank you for joining the influencer network!");
+      // Optionally, refresh the list
+      const { data } = await supabase.from("influencers").select("*");
+      setInfluencerResults(data || []);
+      setSignupForm({
+        name: "",
+        handle: "",
+        avatar: "https://api.dicebear.com/7.x/identicon/svg?seed=" + Math.random(),
+        followers: "",
+        engagement: "",
+        niche: "",
+        location: "",
+        match_score: 80,
+        platforms: "",
+        bio: "",
+        tags: "",
+        profile_url: "",
+      });
+      setActiveTab("brand");
     }
-  ];
+    setLoading(false);
+  };
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
@@ -105,7 +152,7 @@ export default function InfluencerMatch() {
         {/* Brand Matching Tab */}
         <TabsContent value="brand" className="space-y-6">
           <div className="grid lg:grid-cols-3 gap-6">
-            {/* Brand Form */}
+            {/* Brand Form (static for now) */}
             <Card className="lg:col-span-1 border-0 shadow-soft">
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -146,7 +193,7 @@ export default function InfluencerMatch() {
                     placeholder="e.g., $500-1000 per post"
                   />
                 </div>
-                <Button className="w-full bg-gradient-primary hover:opacity-90">
+                <Button className="w-full bg-gradient-primary hover:opacity-90" disabled>
                   Find Matches
                 </Button>
               </CardContent>
@@ -158,20 +205,25 @@ export default function InfluencerMatch() {
                 <h3 className="text-lg font-semibold">
                   {influencerResults.length} Perfect Matches Found
                 </h3>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" disabled>
                   Filter Results
                 </Button>
               </div>
-
+              {loading && <p>Loading influencers...</p>}
+              {error && <p className="text-destructive">{error}</p>}
               {influencerResults.map((influencer) => (
                 <Card key={influencer.id} className="border-0 shadow-soft hover-lift">
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4">
                       <Avatar className="w-16 h-16">
                         <AvatarImage src={influencer.avatar} />
-                        <AvatarFallback>{influencer.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                        <AvatarFallback>
+                          {influencer.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </AvatarFallback>
                       </Avatar>
-                      
                       <div className="flex-1 space-y-3">
                         <div className="flex items-start justify-between">
                           <div>
@@ -188,15 +240,13 @@ export default function InfluencerMatch() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className={`text-2xl font-bold ${getMatchColor(influencer.matchScore)}`}>
-                              {influencer.matchScore}%
+                            <div className={`text-2xl font-bold ${getMatchColor(influencer.match_score)}`}>
+                              {influencer.match_score}%
                             </div>
                             <div className="text-xs text-muted-foreground">Match Score</div>
                           </div>
                         </div>
-
                         <p className="text-sm text-muted-foreground">{influencer.bio}</p>
-
                         <div className="flex items-center justify-between">
                           <div className="flex space-x-4 text-sm">
                             <div className="flex items-center">
@@ -208,28 +258,33 @@ export default function InfluencerMatch() {
                               <span className="font-medium">{influencer.engagement}</span>
                             </div>
                             <div className="flex items-center space-x-1">
-                              {influencer.platforms.map((platform) => (
+                              {influencer.platforms.split(",").map((platform) => (
                                 <div key={platform} className="text-muted-foreground">
-                                  {getPlatformIcon(platform)}
+                                  {getPlatformIcon(platform.trim())}
                                 </div>
                               ))}
                             </div>
                           </div>
                           <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
-                              <ExternalLink className="w-3 h-3 mr-1" />
-                              View Profile
+                            <Button asChild variant="outline" size="sm">
+                              <a
+                                href={influencer.profile_url || "#"}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <ExternalLink className="w-3 h-3 mr-1" />
+                                View Profile
+                              </a>
                             </Button>
                             <Button size="sm" className="bg-gradient-primary hover:opacity-90">
                               Connect
                             </Button>
                           </div>
                         </div>
-
                         <div className="flex flex-wrap gap-1">
-                          {influencer.tags.map((tag, index) => (
+                          {influencer.tags.split(",").map((tag, index) => (
                             <Badge key={index} variant="secondary" className="text-xs">
-                              #{tag}
+                              #{tag.trim()}
                             </Badge>
                           ))}
                         </div>
@@ -255,49 +310,128 @@ export default function InfluencerMatch() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="influencerName">Full Name</Label>
-                  <Input id="influencerName" placeholder="Your name" />
+              <form onSubmit={handleSignupSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      value={signupForm.name}
+                      onChange={handleSignupChange}
+                      placeholder="Your name"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="handle">Social Handle</Label>
+                    <Input
+                      id="handle"
+                      name="handle"
+                      value={signupForm.handle}
+                      onChange={handleSignupChange}
+                      placeholder="@yourusername"
+                      required
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="handle">Social Handle</Label>
-                  <Input id="handle" placeholder="@yourusername" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="niche">Content Niche</Label>
-                <Input id="niche" placeholder="e.g., Food, Travel, Lifestyle" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="values">Brand Values</Label>
-                <Textarea
-                  id="values"
-                  placeholder="What values are important to you? What brands do you want to work with?"
-                  rows={3}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="followers">Follower Count</Label>
-                  <Input id="followers" placeholder="e.g., 10K" />
+                  <Label htmlFor="niche">Content Niche</Label>
+                  <Input
+                    id="niche"
+                    name="niche"
+                    value={signupForm.niche}
+                    onChange={handleSignupChange}
+                    placeholder="e.g., Food, Travel, Lifestyle"
+                    required
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="location">Location</Label>
-                  <Input id="location" placeholder="City, State" />
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    name="bio"
+                    value={signupForm.bio}
+                    onChange={handleSignupChange}
+                    placeholder="Tell brands about yourself and your content..."
+                    rows={3}
+                    required
+                  />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  placeholder="Tell brands about yourself and your content..."
-                  rows={3}
-                />
-              </div>
-              <Button className="w-full bg-gradient-primary hover:opacity-90">
-                Join Influencer Network
-              </Button>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="followers">Follower Count</Label>
+                    <Input
+                      id="followers"
+                      name="followers"
+                      value={signupForm.followers}
+                      onChange={handleSignupChange}
+                      placeholder="e.g., 10K"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="engagement">Engagement Rate</Label>
+                    <Input
+                      id="engagement"
+                      name="engagement"
+                      value={signupForm.engagement}
+                      onChange={handleSignupChange}
+                      placeholder="e.g., 8.4%"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                      id="location"
+                      name="location"
+                      value={signupForm.location}
+                      onChange={handleSignupChange}
+                      placeholder="City, State"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="profile_url">Profile URL</Label>
+                    <Input
+                      id="profile_url"
+                      name="profile_url"
+                      value={signupForm.profile_url}
+                      onChange={handleSignupChange}
+                      placeholder="https://instagram.com/yourprofile"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="platforms">Platforms (comma separated)</Label>
+                  <Input
+                    id="platforms"
+                    name="platforms"
+                    value={signupForm.platforms}
+                    onChange={handleSignupChange}
+                    placeholder="instagram, youtube, twitter"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tags">Tags (comma separated)</Label>
+                  <Input
+                    id="tags"
+                    name="tags"
+                    value={signupForm.tags}
+                    onChange={handleSignupChange}
+                    placeholder="Food, Recipes, Sustainable"
+                  />
+                </div>
+                <Button className="w-full bg-gradient-primary hover:opacity-90" type="submit" disabled={loading}>
+                  {loading ? "Submitting..." : "Join Influencer Network"}
+                </Button>
+                {error && <p className="text-destructive">{error}</p>}
+              </form>
             </CardContent>
           </Card>
         </TabsContent>
