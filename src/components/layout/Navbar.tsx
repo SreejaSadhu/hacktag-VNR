@@ -13,7 +13,7 @@ import {
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
 import { Bell, User, Settings, LogOut, Sparkles } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { signOut } from "@/lib/supabase";
 
 interface NavbarProps {
   variant?: "landing" | "dashboard";
@@ -22,23 +22,31 @@ interface NavbarProps {
 export function Navbar({ variant = "landing" }: NavbarProps) {
   const [notifications] = useState(3);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   // Get user data from localStorage
   const userData = localStorage.getItem('user');
   const user = userData ? JSON.parse(userData) : null;
 
-  const handleLogout = () => {
-    // Clear user session
-    localStorage.removeItem('user');
-    
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    });
+  const handleLogout = async () => {
+    try {
+      // Sign out from Supabase
+      const { error } = await signOut();
+      
+      if (error) {
+        console.error('Logout error:', error);
+      }
+      
+      // Clear user session
+      localStorage.removeItem('user');
 
-    // Redirect to home page
-    navigate('/');
+      // Redirect to home page
+      navigate('/');
+    } catch (err) {
+      console.error('Logout error:', err);
+      // Still clear local session and redirect
+      localStorage.removeItem('user');
+      navigate('/');
+    }
   };
 
   // Get user initials for avatar

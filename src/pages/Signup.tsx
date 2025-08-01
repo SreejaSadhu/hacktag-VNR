@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Eye, EyeOff } from "lucide-react";
-
+import { Sparkles, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { signUp } from "@/lib/supabase";
 
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,41 +16,59 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const navigate = useNavigate();
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    setError(null);
+    setSuccess(null);
 
     // Validate required fields
     if (!firstName || !lastName || !email || !password) {
-
+      setError('Please fill in all required fields.');
       setIsLoading(false);
       return;
     }
 
     if (!agreeToTerms) {
-
+      setError('Please agree to the Terms of Service and Privacy Policy.');
       setIsLoading(false);
       return;
     }
 
-    // Store dummy user session
-    localStorage.setItem('user', JSON.stringify({
-      id: 'dummy-user-id',
-      email: email,
-      name: `${firstName} ${lastName}`,
-      firstName: firstName,
-      lastName: lastName
-    }));
+    try {
+      const { data, error } = await signUp(email, password, { firstName, lastName });
 
-    // Redirect to onboarding
-    navigate('/onboarding');
-    setIsLoading(false);
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      if (data.user) {
+        setSuccess('Account created successfully! Please check your email to verify your account.');
+        
+        // Store user session
+        localStorage.setItem('user', JSON.stringify({
+          id: data.user.id,
+          email: data.user.email,
+          name: `${firstName} ${lastName}`,
+          firstName: firstName,
+          lastName: lastName
+        }));
+
+        // Redirect to dashboard after a short delay
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2000);
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -68,6 +86,18 @@ export default function Signup() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {error && (
+            <div className="flex items-center space-x-2 text-destructive bg-destructive/5 p-3 rounded-lg">
+              <AlertCircle className="w-4 h-4" />
+              <span className="text-sm">{error}</span>
+            </div>
+          )}
+          {success && (
+            <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-3 rounded-lg">
+              <AlertCircle className="w-4 h-4" />
+              <span className="text-sm">{success}</span>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
@@ -163,9 +193,6 @@ export default function Signup() {
             <Link to="/login" className="text-primary hover:underline font-medium">
               Sign in
             </Link>
-          </div>
-          <div className="text-center text-xs text-muted-foreground mt-4">
-            <p>💡 Demo Mode: Any valid form data will create an account</p>
           </div>
         </CardContent>
       </Card>

@@ -4,45 +4,48 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, Eye, EyeOff } from "lucide-react";
-
+import { Sparkles, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { signIn } from "@/lib/supabase";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      const { data, error } = await signIn(email, password);
 
-    // Dummy credentials - accept any email/password combination
-    if (email && password) {
-      // Store dummy user session
-      localStorage.setItem('user', JSON.stringify({
-        id: 'dummy-user-id',
-        email: email,
-        name: email.split('@')[0] || 'User'
-      }));
+      if (error) {
+        setError(error.message);
+        return;
+      }
 
-      toast({
-        title: "Login Successful",
-        description: "Welcome to Boostly!",
-      });
+      if (data.user) {
+        // Store user session
+        localStorage.setItem('user', JSON.stringify({
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
+          firstName: data.user.user_metadata?.first_name,
+          lastName: data.user.user_metadata?.last_name
+        }));
 
-      // Redirect to dashboard
-      navigate('/dashboard');
-    } else {
-
+        // Redirect to dashboard
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (
@@ -60,6 +63,12 @@ export default function Login() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {error && (
+            <div className="flex items-center space-x-2 text-destructive bg-destructive/5 p-3 rounded-lg">
+              <AlertCircle className="w-4 h-4" />
+              <span className="text-sm">{error}</span>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -119,9 +128,6 @@ export default function Login() {
             <Link to="/signup" className="text-primary hover:underline font-medium">
               Sign up
             </Link>
-          </div>
-          <div className="text-center text-xs text-muted-foreground mt-4">
-            <p>💡 Demo Mode: Any email/password combination will work</p>
           </div>
         </CardContent>
       </Card>
