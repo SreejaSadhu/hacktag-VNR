@@ -102,7 +102,7 @@ export async function generateWebsite(request: WebsiteGenerationRequest): Promis
     }
     
     console.log('🔑 API key found, initializing Gemini...');
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
     // Analyze business type from description
     const businessType = analyzeBusinessType(request.description);
@@ -267,7 +267,7 @@ export async function generateEmail(request: EmailGenerationRequest): Promise<Em
     }
     
     console.log('🔑 API key found, initializing Gemini...');
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
     // Analyze business type from objective
     const businessType = analyzeBusinessType(request.objective);
@@ -298,6 +298,8 @@ Return ONLY this JSON format:
   "content": "Complete email content with formatting",
   "description": "Brief description of the email campaign"
 }
+  Strictly return only valid JSON. Do not include any explanations, markdown, or extra text.
+Do not include trailing commas or comments.
 `;
 
     console.log('🚀 Sending email request to Gemini API...');
