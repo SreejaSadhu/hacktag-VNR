@@ -41,6 +41,14 @@ export default function InfluencerMatch() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Brand form state
+  const [brandForm, setBrandForm] = useState({
+    campaignGoals: "",
+    targetAudience: "",
+    brandTone: "",
+    budget: "",
+  });
+
   // Influencer signup form state
   const [signupForm, setSignupForm] = useState({
     name: "",
@@ -57,18 +65,46 @@ export default function InfluencerMatch() {
     profile_url: "",
   });
 
-  // Fetch influencers from Supabase
+  // Fetch all influencers on mount (for initial display)
   useEffect(() => {
-    setLoading(true);
-    supabase
-      .from("influencers")
-      .select("*")
-      .then(({ data, error }) => {
-        if (error) setError(error.message);
-        else setInfluencerResults(data || []);
-        setLoading(false);
-      });
+    fetchAllInfluencers();
   }, []);
+
+  const fetchAllInfluencers = async () => {
+    setLoading(true);
+    setError(null);
+    const { data, error } = await supabase.from("influencers").select("*");
+    if (error) setError(error.message);
+    else setInfluencerResults(data || []);
+    setLoading(false);
+  };
+
+  // Handle brand form changes
+  const handleBrandFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setBrandForm((prev) => ({ ...prev, [id]: value }));
+  };
+
+  // Find matches based on brand form
+  const handleFindMatches = async () => {
+    setLoading(true);
+    setError(null);
+
+    let query = supabase.from("influencers").select("*");
+
+    // Example: filter by niche (targetAudience) and bio (brandTone)
+    if (brandForm.targetAudience) {
+      query = query.ilike("niche", `%${brandForm.targetAudience}%`);
+    }
+    if (brandForm.brandTone) {
+      query = query.ilike("bio", `%${brandForm.brandTone}%`);
+    }
+
+    const { data, error } = await query;
+    if (error) setError(error.message);
+    else setInfluencerResults(data || []);
+    setLoading(false);
+  };
 
   // Handle influencer signup form changes
   const handleSignupChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -81,7 +117,6 @@ export default function InfluencerMatch() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    // Convert platforms and tags to comma-separated strings if needed
     const formToSend = {
       ...signupForm,
       platforms: signupForm.platforms,
@@ -92,9 +127,7 @@ export default function InfluencerMatch() {
       setError(error.message);
     } else {
       alert("Thank you for joining the influencer network!");
-      // Optionally, refresh the list
-      const { data } = await supabase.from("influencers").select("*");
-      setInfluencerResults(data || []);
+      fetchAllInfluencers();
       setSignupForm({
         name: "",
         handle: "",
@@ -152,7 +185,7 @@ export default function InfluencerMatch() {
         {/* Brand Matching Tab */}
         <TabsContent value="brand" className="space-y-6">
           <div className="grid lg:grid-cols-3 gap-6">
-            {/* Brand Form (static for now) */}
+            {/* Brand Form */}
             <Card className="lg:col-span-1 border-0 shadow-soft">
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -165,9 +198,11 @@ export default function InfluencerMatch() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="brandGoals">Campaign Goals</Label>
+                  <Label htmlFor="campaignGoals">Campaign Goals</Label>
                   <Textarea
-                    id="brandGoals"
+                    id="campaignGoals"
+                    value={brandForm.campaignGoals}
+                    onChange={handleBrandFormChange}
                     placeholder="e.g., Increase brand awareness for our new bakery, reach food enthusiasts in local area..."
                     rows={3}
                   />
@@ -176,6 +211,8 @@ export default function InfluencerMatch() {
                   <Label htmlFor="targetAudience">Target Audience</Label>
                   <Input
                     id="targetAudience"
+                    value={brandForm.targetAudience}
+                    onChange={handleBrandFormChange}
                     placeholder="e.g., Food lovers, 25-45, health-conscious"
                   />
                 </div>
@@ -183,6 +220,8 @@ export default function InfluencerMatch() {
                   <Label htmlFor="brandTone">Brand Tone</Label>
                   <Input
                     id="brandTone"
+                    value={brandForm.brandTone}
+                    onChange={handleBrandFormChange}
                     placeholder="e.g., Warm, authentic, community-focused"
                   />
                 </div>
@@ -190,11 +229,25 @@ export default function InfluencerMatch() {
                   <Label htmlFor="budget">Budget Range</Label>
                   <Input
                     id="budget"
+                    value={brandForm.budget}
+                    onChange={handleBrandFormChange}
                     placeholder="e.g., $500-1000 per post"
                   />
                 </div>
-                <Button className="w-full bg-gradient-primary hover:opacity-90" disabled>
-                  Find Matches
+                <Button
+                  className="w-full bg-gradient-primary hover:opacity-90"
+                  onClick={handleFindMatches}
+                  disabled={loading}
+                >
+                  {loading ? "Finding..." : "Find Matches"}
+                </Button>
+                <Button
+                  className="w-full mt-2"
+                  variant="outline"
+                  onClick={fetchAllInfluencers}
+                  disabled={loading}
+                >
+                  Show All Influencers
                 </Button>
               </CardContent>
             </Card>
@@ -266,17 +319,15 @@ export default function InfluencerMatch() {
                             </div>
                           </div>
                           <div className="flex space-x-2">
-                            <Button asChild variant="outline" size="sm">
-                              <a
-                                href={influencer.profile_url || "#"}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <ExternalLink className="w-3 h-3 mr-1" />
-                                View Profile
-                              </a>
-                            </Button>
-                            <Button size="sm" className="bg-gradient-primary hover:opacity-90">
+                            <Button
+                              size="sm"
+                              className="bg-gradient-primary hover:opacity-90"
+                              onClick={() => {
+                                if (influencer.profile_url) {
+                                  window.open(influencer.profile_url, "_blank", "noopener,noreferrer");
+                                }
+                              }}
+                            >
                               Connect
                             </Button>
                           </div>
