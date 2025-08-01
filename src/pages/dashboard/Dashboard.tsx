@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useNavigate } from "react-router-dom";
 import { 
   Globe, 
   HardDrive, 
@@ -17,6 +18,9 @@ import {
 } from "lucide-react";
 
 export default function Dashboard() {
+
+  const navigate = useNavigate();
+
   const stats = [
     {
       title: "Sites Created",
@@ -121,6 +125,9 @@ export default function Dashboard() {
             <Button 
               variant="outline" 
               className="h-20 flex flex-col items-center justify-center space-y-2 hover:bg-primary/5 hover:border-primary/20"
+
+              onClick={() => navigate('/dashboard/generate')}
+
             >
               <Sparkles className="w-6 h-6 text-primary" />
               <span>Generate Website</span>
@@ -128,6 +135,9 @@ export default function Dashboard() {
             <Button 
               variant="outline" 
               className="h-20 flex flex-col items-center justify-center space-y-2 hover:bg-secondary/20 hover:border-secondary"
+
+              onClick={() => navigate('/dashboard/influencer')}
+
             >
               <Users className="w-6 h-6 text-secondary" />
               <span>Find Influencers</span>
@@ -135,6 +145,9 @@ export default function Dashboard() {
             <Button 
               variant="outline" 
               className="h-20 flex flex-col items-center justify-center space-y-2 hover:bg-accent/20 hover:border-accent"
+
+              onClick={() => navigate('/dashboard/email')}
+
             >
               <Mail className="w-6 h-6 text-accent" />
               <span>Email Campaign</span>
@@ -142,6 +155,8 @@ export default function Dashboard() {
             <Button 
               variant="outline" 
               className="h-20 flex flex-col items-center justify-center space-y-2 hover:bg-success/20 hover:border-success"
+     onClick={() => navigate('/dashboard/analytics')}
+
             >
               <TrendingUp className="w-6 h-6 text-success" />
               <span>View Analytics</span>

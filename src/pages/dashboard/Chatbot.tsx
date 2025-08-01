@@ -1,4 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+
+import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,24 +16,21 @@ import {
   Plus,
   Sparkles,
   MessageSquare,
-  Zap,
-  Loader2
+
+  Zap
 } from "lucide-react";
-import { geminiService, ChatMessage } from "@/lib/gemini";
-import { toast } from "sonner";
 
 export default function Chatbot() {
   const [inputMessage, setInputMessage] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const [messages, setMessages] = useState([
     {
       id: 1,
       type: "bot",
-      content: "Hello! I'm your AI business assistant powered by Gemini. I can help you with website copy, marketing ideas, business strategies, and more. What would you like to work on today?",
+      content: "Hello! I'm your AI assistant. I can help you with website copy, marketing ideas, business strategies, and more. What would you like to work on today?",
       timestamp: new Date()
     }
   ]);
-  const [isLoading, setIsLoading] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
 
   const savedPrompts = [
     "Suggest a tagline for my bakery",
@@ -62,67 +61,44 @@ export default function Chatbot() {
     }
   ];
 
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
-  }, [messages]);
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || isLoading) return;
+  const handleSendMessage = () => {
+    if (!inputMessage.trim()) return;
 
-    const userMessage: ChatMessage = {
+    const newMessage = {
+
       id: messages.length + 1,
       type: "user",
       content: inputMessage,
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, userMessage]);
+
+    setMessages(prev => [...prev, newMessage]);
     setInputMessage("");
-    setIsLoading(true);
 
-    try {
-      // Get AI response from Gemini
-      const aiResponse = await geminiService.sendMessage(inputMessage);
-      
-      const botMessage: ChatMessage = {
+    // Simulate AI response
+    setTimeout(() => {
+      const botResponse = {
         id: messages.length + 2,
         type: "bot",
-        content: aiResponse,
+        content: generateBotResponse(inputMessage),
         timestamp: new Date()
       };
-
-      setMessages(prev => [...prev, botMessage]);
-    } catch (error) {
-      console.error('Error getting AI response:', error);
-      toast.error('Failed to get AI response. Please try again.');
-      
-      // Add error message
-      const errorMessage: ChatMessage = {
-        id: messages.length + 2,
-        type: "bot",
-        content: "I apologize, but I'm having trouble connecting right now. Please check your internet connection and try again.",
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
+      setMessages(prev => [...prev, botResponse]);
+    }, 1000);
   };
 
-  const handleNewChat = () => {
-    geminiService.startNewChat();
-    setMessages([
-      {
-        id: 1,
-        type: "bot",
-        content: "Hello! I'm your AI business assistant powered by Gemini. I can help you with website copy, marketing ideas, business strategies, and more. What would you like to work on today?",
-        timestamp: new Date()
-      }
-    ]);
-    toast.success('Started a new chat session');
+  const generateBotResponse = (userMessage: string) => {
+    // Simple response simulation based on keywords
+    if (userMessage.toLowerCase().includes("tagline")) {
+      return "Here are some tagline ideas for your bakery:\n\n• 'Freshly Baked Happiness, Daily'\n• 'Where Every Bite Tells a Story'\n• 'Artisan Breads, Community Hearts'\n• 'Sweet Dreams Begin Here'\n\nWhich style resonates with your brand personality?";
+    }
+    if (userMessage.toLowerCase().includes("marketing")) {
+      return "I'd love to help with your marketing strategy! Here are some effective approaches for local businesses:\n\n1. **Social Media Presence**: Share behind-the-scenes baking videos\n2. **Local Partnerships**: Collaborate with nearby coffee shops\n3. **Seasonal Promotions**: Holiday-themed products and packaging\n4. **Customer Loyalty**: Rewards program for repeat customers\n\nWhich area would you like to explore further?";
+    }
+    return "That's a great question! I can help you brainstorm ideas, refine your messaging, or develop strategies for your business. Could you provide a bit more context about what you're working on?";
+
   };
 
   const handlePromptClick = (prompt: string) => {
@@ -134,10 +110,9 @@ export default function Chatbot() {
       {/* Sidebar */}
       <div className="lg:col-span-1 space-y-4">
         {/* New Chat */}
-        <Button 
-          className="w-full bg-gradient-primary hover:opacity-90"
-          onClick={handleNewChat}
-        >
+
+        <Button className="w-full bg-gradient-primary hover:opacity-90">
+
           <Plus className="w-4 h-4 mr-2" />
           New Chat
         </Button>
@@ -203,14 +178,17 @@ export default function Chatbot() {
                 <CardTitle className="text-lg">AI Business Assistant</CardTitle>
                 <CardDescription className="flex items-center">
                   <div className="w-2 h-2 bg-success rounded-full mr-2" />
-                  Powered by Gemini AI
+                  Online and ready to help
+
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
 
           {/* Messages */}
-          <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+
+          <ScrollArea className="flex-1 p-4">
+
             <div className="space-y-4">
               {messages.map((message) => (
                 <div
@@ -247,23 +225,8 @@ export default function Chatbot() {
                   </div>
                 </div>
               ))}
-              
-              {/* Loading indicator */}
-              {isLoading && (
-                <div className="flex items-start space-x-3">
-                  <Avatar className="w-8 h-8">
-                    <div className="w-full h-full bg-gradient-primary flex items-center justify-center">
-                      <Bot className="w-4 h-4 text-white" />
-                    </div>
-                  </Avatar>
-                  <div className="bg-muted rounded-lg p-3">
-                    <div className="flex items-center space-x-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span className="text-sm">AI is thinking...</span>
-                    </div>
-                  </div>
-                </div>
-              )}
+
+
             </div>
           </ScrollArea>
 
@@ -274,25 +237,24 @@ export default function Chatbot() {
                 placeholder="Ask me anything about your business..."
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && !isLoading && handleSendMessage()}
+
+                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                 className="flex-1"
-                disabled={isLoading}
               />
               <Button 
                 onClick={handleSendMessage}
-                disabled={!inputMessage.trim() || isLoading}
+                disabled={!inputMessage.trim()}
                 className="bg-gradient-primary hover:opacity-90"
               >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
+                <Send className="w-4 h-4" />
+
               </Button>
             </div>
             <div className="flex items-center space-x-2 mt-2 text-xs text-muted-foreground">
               <Sparkles className="w-3 h-3" />
-              <span>Powered by Gemini AI • Always here to help your business grow</span>
+
+              <span>Powered by advanced AI • Always here to help your business grow</span>
+
             </div>
           </div>
         </Card>

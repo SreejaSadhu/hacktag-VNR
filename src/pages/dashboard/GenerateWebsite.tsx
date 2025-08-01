@@ -5,63 +5,132 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { AILoading } from "@/components/ui/LoadingSpinner";
 import { CTAButton } from "@/components/ui/CTAButton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { 
   Sparkles, 
   Wand2, 
   Download, 
   Eye, 
   RefreshCw,
-  Palette,
-  Type,
-  Layout
+
+  AlertCircle,
+  Code
 } from "lucide-react";
+import { generateWebsite, WebsiteGenerationResponse } from "@/lib/gemini";
+import { useToast } from "@/hooks/use-toast";
+
 
 export default function GenerateWebsite() {
   const [description, setDescription] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
-  const [selectedPersona, setSelectedPersona] = useState("professional");
 
-  const personas = [
-    {
-      id: "professional",
-      name: "Professional",
-      description: "Clean, corporate, and trustworthy",
-      color: "bg-primary"
-    },
-    {
-      id: "playful", 
-      name: "Playful",
-      description: "Fun, colorful, and energetic",
-      color: "bg-secondary"
-    },
-    {
-      id: "minimal",
-      name: "Minimal",
-      description: "Simple, elegant, and focused",
-      color: "bg-accent"
-    }
-  ];
+  const [generatedWebsite, setGeneratedWebsite] = useState<WebsiteGenerationResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("code");
+  const { toast } = useToast();
+
 
   const handleGenerate = async () => {
     if (!description.trim()) return;
     
     setIsGenerating(true);
-    // Simulate AI generation
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    setIsGenerating(false);
-    setHasGenerated(true);
+
+    setError(null);
+    
+    try {
+      const result = await generateWebsite({
+        description: description.trim(),
+        persona: "professional" // Default to professional
+      });
+      
+      setGeneratedWebsite(result);
+      setHasGenerated(true);
+      setActiveTab("code");
+      toast({
+        title: "Website Generated!",
+        description: "Your website has been created successfully.",
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to generate website";
+      setError(errorMessage);
+      toast({
+        title: "Generation Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
-  const handleRegenerate = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-    }, 3000);
+  const handleDownload = () => {
+    if (!generatedWebsite) return;
+    
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${generatedWebsite.title}</title>
+    <style>
+        ${generatedWebsite.css}
+    </style>
+</head>
+<body>
+    ${generatedWebsite.html}
+</body>
+</html>
+    `;
+    
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${generatedWebsite.title.toLowerCase().replace(/\s+/g, '-')}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Downloaded!",
+      description: "Your website has been downloaded successfully.",
+    });
+  };
+
+  const handlePreview = () => {
+    if (!generatedWebsite) return;
+    
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${generatedWebsite.title}</title>
+    <style>
+        ${generatedWebsite.css}
+    </style>
+</head>
+<body>
+    ${generatedWebsite.html}
+</body>
+</html>
+    `;
+    
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.write(htmlContent);
+      newWindow.document.close();
+    }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
+>>>>>>> rajeevi02
       {/* Header */}
       <div className="text-center space-y-4">
         <div className="flex justify-center">
@@ -74,6 +143,20 @@ export default function GenerateWebsite() {
           Describe your business and let AI create a stunning website tailored to your needs.
         </p>
       </div>
+
+
+      {/* Error Display */}
+      {error && (
+        <Card className="border-destructive bg-destructive/5">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2 text-destructive">
+              <AlertCircle className="w-4 h-4" />
+              <span className="text-sm">{error}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
 
       {!hasGenerated ? (
         /* Generation Form */
@@ -102,27 +185,7 @@ export default function GenerateWebsite() {
               </p>
             </div>
 
-            {/* AI Persona Toggle */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium">AI Persona</label>
-              <div className="grid grid-cols-3 gap-3">
-                {personas.map((persona) => (
-                  <button
-                    key={persona.id}
-                    onClick={() => setSelectedPersona(persona.id)}
-                    className={`p-4 rounded-lg border-2 transition-all text-left ${
-                      selectedPersona === persona.id 
-                        ? 'border-primary bg-primary/5' 
-                        : 'border-border hover:border-muted-foreground/50'
-                    }`}
-                  >
-                    <div className={`w-4 h-4 rounded-full ${persona.color} mb-2`} />
-                    <div className="font-medium text-sm">{persona.name}</div>
-                    <div className="text-xs text-muted-foreground">{persona.description}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
+
 
             <CTAButton 
               onClick={handleGenerate}
@@ -152,22 +215,23 @@ export default function GenerateWebsite() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold mb-2">Sweet Dreams Bakery</h2>
+
+                  <h2 className="text-xl font-semibold mb-2">{generatedWebsite?.title || "Generated Website"}</h2>
                   <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                     <Badge variant="secondary">Professional Style</Badge>
-                    <span>Generated 2 minutes ago</span>
+                    <span>Generated just now</span>
                   </div>
+                  {generatedWebsite?.description && (
+                    <p className="text-sm text-muted-foreground mt-2">{generatedWebsite.description}</p>
+                  )}
                 </div>
                 <div className="flex space-x-2">
-                  <Button variant="outline" onClick={handleRegenerate} disabled={isGenerating}>
-                    <RefreshCw className={`w-4 h-4 mr-2 ${isGenerating ? 'animate-spin' : ''}`} />
-                    Regenerate
-                  </Button>
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={handlePreview}>
                     <Eye className="w-4 h-4 mr-2" />
                     Preview
                   </Button>
-                  <Button>
+                  <Button onClick={handleDownload}>
+
                     <Download className="w-4 h-4 mr-2" />
                     Download
                   </Button>
@@ -176,72 +240,50 @@ export default function GenerateWebsite() {
             </CardContent>
           </Card>
 
-          {/* Website Preview */}
-          <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <Card className="border-0 shadow-soft overflow-hidden">
-                <CardHeader>
-                  <CardTitle className="text-lg">Website Preview</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="aspect-[16/10] bg-gradient-hero rounded-lg mx-6 mb-6 flex items-center justify-center">
-                    <div className="text-center space-y-4 text-foreground/70">
-                      <div className="w-16 h-16 bg-gradient-primary rounded-xl mx-auto flex items-center justify-center">
-                        <Sparkles className="w-8 h-8 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="text-2xl font-bold">Sweet Dreams Bakery</h3>
-                        <p className="text-lg">Artisanal breads & pastries</p>
-                      </div>
+
+          {/* Website Code */}
+          <Card className="border-0 shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-lg">Generated Website Code</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="html" className="flex items-center space-x-2">
+                    <Code className="w-4 h-4" />
+                    <span>HTML</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="css" className="flex items-center space-x-2">
+                    <Code className="w-4 h-4" />
+                    <span>CSS</span>
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="html" className="p-6">
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">HTML Structure</h4>
+                    <div className="bg-muted rounded-lg p-4 max-h-96 overflow-y-auto">
+                      <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
+                        {generatedWebsite?.html || "No HTML generated yet"}
+                      </pre>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                </TabsContent>
+                
+                <TabsContent value="css" className="p-6">
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">CSS Styles</h4>
+                    <div className="bg-muted rounded-lg p-4 max-h-96 overflow-y-auto">
+                      <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
+                        {generatedWebsite?.css || "No CSS generated yet"}
+                      </pre>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
 
-            {/* Customization Options */}
-            <div className="space-y-4">
-              <Card className="border-0 shadow-soft">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <Palette className="w-5 h-5 mr-2" />
-                    Template Remix
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Palette className="w-4 h-4 mr-2" />
-                    Shuffle Colors
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Type className="w-4 h-4 mr-2" />
-                    Change Fonts
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Layout className="w-4 h-4 mr-2" />
-                    New Layout
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-soft">
-                <CardHeader>
-                  <CardTitle className="text-lg">Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <CTAButton className="w-full">
-                    Save Website
-                  </CTAButton>
-                  <Button variant="outline" className="w-full">
-                    Publish Live
-                  </Button>
-                  <Button variant="outline" className="w-full">
-                    Edit in Builder
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
         </div>
       )}
 
