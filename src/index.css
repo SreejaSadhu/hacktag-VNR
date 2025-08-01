@@ -59,6 +59,16 @@
     --sidebar-border: 240 8% 92%;
     --sidebar-ring: 270 50% 85%;
 
+    /* Dark mode sidebar */
+    --sidebar-background-dark: 0 0% 0%;
+    --sidebar-foreground-dark: 0 0% 95%;
+    --sidebar-primary-dark: 253 91% 75%;
+    --sidebar-primary-foreground-dark: 0 0% 0%;
+    --sidebar-accent-dark: 240 3.7% 15.9%;
+    --sidebar-accent-foreground-dark: 0 0% 95%;
+    --sidebar-border-dark: 240 3.7% 15.9%;
+    --sidebar-ring-dark: 253 91% 75%;
+
     /* Neura-style gradients */
     --gradient-primary: linear-gradient(135deg, hsl(270 50% 90%), hsl(140 40% 90%), hsl(20 60% 90%));
     --gradient-secondary: linear-gradient(120deg, hsl(140 40% 88%), hsl(180 30% 88%));
@@ -71,48 +81,48 @@
   }
 
   .dark {
-    /* Dark Mode - Soft & Elegant */
-    --background: 240 10% 8%;
+    /* Dark Mode - Pitch Black Background */
+    --background: 0 0% 0%;
     --foreground: 0 0% 95%;
 
-    --card: 240 10% 10%;
+    --card: 0 0% 0%;
     --card-foreground: 0 0% 95%;
 
-    --popover: 240 10% 10%;
+    --popover: 0 0% 0%;
     --popover-foreground: 0 0% 95%;
 
     --primary: 253 91% 75%;
-    --primary-foreground: 240 10% 8%;
+    --primary-foreground: 0 0% 0%;
 
-    --secondary: 240 3.7% 15.9%;
+    --secondary: 0 0% 0%;
     --secondary-foreground: 0 0% 95%;
 
-    --muted: 240 3.7% 15.9%;
+    --muted: 0 0% 0%;
     --muted-foreground: 240 5% 64.9%;
 
-    --accent: 240 3.7% 15.9%;
+    --accent: 0 0% 0%;
     --accent-foreground: 0 0% 95%;
 
     --success: 142 76% 65%;
-    --success-foreground: 240 10% 8%;
+    --success-foreground: 0 0% 0%;
 
     --warning: 38 92% 65%;
-    --warning-foreground: 240 10% 8%;
+    --warning-foreground: 0 0% 0%;
 
     --destructive: 0 62.8% 50%;
     --destructive-foreground: 0 0% 95%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
+    --border: 0 0% 0%;
+    --input: 0 0% 0%;
     --ring: 253 91% 75%;
 
-    --sidebar-background: 240 10% 8%;
+    --sidebar-background: 0 0% 0%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 253 91% 75%;
-    --sidebar-primary-foreground: 240 10% 8%;
-    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 0%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-border: 0 0% 0%;
     --sidebar-ring: 253 91% 75%;
 
     /* Dark Gradients */
