@@ -17,9 +17,11 @@ import {
   ChevronRight
 } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const navigate = useNavigate();
 
   const features = [
     {
@@ -114,6 +116,10 @@ const Index = () => {
     setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length);
   };
 
+  const handleStartFree = () => {
+    navigate('/onboarding');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar variant="landing" />
@@ -133,7 +139,7 @@ const Index = () => {
               Describe your business and watch AI create a stunning, professional website in seconds. No coding required.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-              <CTAButton size="lg" className="text-lg px-8 py-4">
+              <CTAButton size="lg" className="text-lg px-8 py-4" onClick={handleStartFree}>
                 Start for Free <ArrowRight className="ml-2 w-5 h-5" />
               </CTAButton>
               <Button variant="outline" size="lg" className="text-lg px-8 py-4">
