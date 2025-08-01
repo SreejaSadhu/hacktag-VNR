@@ -1,52 +1,40 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { AILoading } from "@/components/ui/LoadingSpinner";
-import { CTAButton } from "@/components/ui/CTAButton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-import { 
-  Sparkles, 
-  Wand2, 
-  Download, 
-  Eye, 
-  RefreshCw,
-
-  AlertCircle,
-  Code
-} from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sparkles, Wand2, Download, Eye, AlertCircle, Code } from "lucide-react";
 import { generateWebsite, WebsiteGenerationResponse } from "@/lib/gemini";
 import { useToast } from "@/hooks/use-toast";
-
+import { saveWebsite } from "@/utils/websiteStorage";
+import { v4 as uuidv4 } from "uuid";
 
 export default function GenerateWebsite() {
   const [description, setDescription] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
-
   const [generatedWebsite, setGeneratedWebsite] = useState<WebsiteGenerationResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("code");
   const { toast } = useToast();
 
-
   const handleGenerate = async () => {
     if (!description.trim()) return;
-    
     setIsGenerating(true);
-
     setError(null);
-    
+
     try {
       const result = await generateWebsite({
         description: description.trim(),
         persona: "professional" // Default to professional
       });
-      
-      // Check if the result contains an error message
-      if (result.title === 'API Key Error' || result.title === 'Generation Error' || result.title === 'Invalid Response' || result.title === 'Incomplete Response') {
+
+      // Check for error responses
+      if (
+        result.title === 'API Key Error' ||
+        result.title === 'Generation Error' ||
+        result.title === 'Invalid Response' ||
+        result.title === 'Incomplete Response'
+      ) {
         setError(result.description);
         toast({
           title: "Generation Failed",
@@ -60,6 +48,16 @@ export default function GenerateWebsite() {
         toast({
           title: "Website Generated!",
           description: "Your website has been created successfully.",
+        });
+
+        // Save to localStorage
+        saveWebsite({
+          id: uuidv4(),
+          title: result.title,
+          html: result.html,
+          css: result.css,
+          description: result.description,
+          createdAt: new Date().toISOString(),
         });
       }
     } catch (err) {
@@ -77,7 +75,6 @@ export default function GenerateWebsite() {
 
   const handleDownload = () => {
     if (!generatedWebsite) return;
-    
     const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
@@ -94,7 +91,6 @@ export default function GenerateWebsite() {
 </body>
 </html>
     `;
-    
     const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -104,7 +100,7 @@ export default function GenerateWebsite() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
+
     toast({
       title: "Downloaded!",
       description: "Your website has been downloaded successfully.",
@@ -113,7 +109,6 @@ export default function GenerateWebsite() {
 
   const handlePreview = () => {
     if (!generatedWebsite) return;
-    
     const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
@@ -130,7 +125,6 @@ export default function GenerateWebsite() {
 </body>
 </html>
     `;
-    
     const newWindow = window.open('', '_blank');
     if (newWindow) {
       newWindow.document.write(htmlContent);
@@ -140,7 +134,6 @@ export default function GenerateWebsite() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-
       {/* Header */}
       <div className="text-center space-y-4">
         <div className="flex justify-center">
@@ -154,7 +147,6 @@ export default function GenerateWebsite() {
         </p>
       </div>
 
-
       {/* Error Display */}
       {error && (
         <Card className="border-destructive bg-destructive/5">
@@ -167,9 +159,7 @@ export default function GenerateWebsite() {
         </Card>
       )}
 
-
       {!hasGenerated ? (
-        /* Generation Form */
         <Card className="border-0 shadow-soft">
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -190,14 +180,8 @@ export default function GenerateWebsite() {
                 rows={4}
                 className="resize-none"
               />
-              <p className="text-xs text-muted-foreground">
-                {description.length}/500 characters
-              </p>
             </div>
-
-
-
-            <CTAButton 
+            <Button
               onClick={handleGenerate}
               disabled={!description.trim() || isGenerating}
               className="w-full h-12"
@@ -205,51 +189,38 @@ export default function GenerateWebsite() {
             >
               {isGenerating ? (
                 <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
+                  <span>Generating...</span>
+                  <Sparkles className="w-5 h-5 ml-2 animate-spin" />
                 </>
               ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Generate Website
-                </>
+                "Generate Website"
               )}
-            </CTAButton>
+            </Button>
           </CardContent>
         </Card>
       ) : (
-        /* Generated Preview */
         <div className="space-y-6">
-          {/* Preview Header */}
+          {/* Website Info */}
           <Card className="border-0 shadow-soft">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-
-                  <h2 className="text-xl font-semibold mb-2">{generatedWebsite?.title || "Generated Website"}</h2>
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                    <Badge variant="secondary">Professional Style</Badge>
-                    <span>Generated just now</span>
-                  </div>
-                  {generatedWebsite?.description && (
-                    <p className="text-sm text-muted-foreground mt-2">{generatedWebsite.description}</p>
-                  )}
-                </div>
-                <div className="flex space-x-2">
-                  <Button variant="outline" onClick={handlePreview}>
-                    <Eye className="w-4 h-4 mr-2" />
-                    Preview
-                  </Button>
-                  <Button onClick={handleDownload}>
-
-                    <Download className="w-4 h-4 mr-2" />
-                    Download
-                  </Button>
-                </div>
+            <CardHeader>
+              <CardTitle className="text-lg">{generatedWebsite?.title || "Generated Website"}</CardTitle>
+              <CardDescription>
+                {generatedWebsite?.description}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex space-x-2">
+                <Button variant="outline" onClick={handlePreview}>
+                  <Eye className="w-4 h-4 mr-2" />
+                  Preview
+                </Button>
+                <Button onClick={handleDownload}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
               </div>
             </CardContent>
           </Card>
-
 
           {/* Website Code */}
           <Card className="border-0 shadow-soft">
@@ -257,52 +228,25 @@ export default function GenerateWebsite() {
               <CardTitle className="text-lg">Generated Website Code</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="html" className="flex items-center space-x-2">
-                    <Code className="w-4 h-4" />
-                    <span>HTML</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="css" className="flex items-center space-x-2">
-                    <Code className="w-4 h-4" />
-                    <span>CSS</span>
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="html" className="p-6">
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">HTML Structure</h4>
-                    <div className="bg-muted rounded-lg p-4 max-h-96 overflow-y-auto">
-                      <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
-                        {generatedWebsite?.html || "No HTML generated yet"}
-                      </pre>
-                    </div>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="css" className="p-6">
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">CSS Styles</h4>
-                    <div className="bg-muted rounded-lg p-4 max-h-96 overflow-y-auto">
-                      <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
-                        {generatedWebsite?.css || "No CSS generated yet"}
-                      </pre>
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
+              <div className="p-6">
+                <h4 className="text-sm font-medium mb-2">HTML Structure</h4>
+                <div className="bg-muted rounded-lg p-4 max-h-96 overflow-y-auto">
+                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
+                    {generatedWebsite?.html || "No HTML generated yet"}
+                  </pre>
+                </div>
+              </div>
+              <div className="p-6">
+                <h4 className="text-sm font-medium mb-2">CSS Styles</h4>
+                <div className="bg-muted rounded-lg p-4 max-h-96 overflow-y-auto">
+                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
+                    {generatedWebsite?.css || "No CSS generated yet"}
+                  </pre>
+                </div>
+              </div>
             </CardContent>
           </Card>
-
         </div>
-      )}
-
-      {/* Loading State */}
-      {isGenerating && (
-        <AILoading 
-          text="Creating your perfect website..."
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50"
-        />
       )}
     </div>
   );
