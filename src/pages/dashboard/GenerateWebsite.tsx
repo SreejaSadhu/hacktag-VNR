@@ -130,7 +130,7 @@ export default function GenerateWebsite() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
->>>>>>> rajeevi02
+
       {/* Header */}
       <div className="text-center space-y-4">
         <div className="flex justify-center">

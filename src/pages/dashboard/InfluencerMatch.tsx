@@ -270,7 +270,7 @@ export default function InfluencerMatch() {
                 <h3 className="text-lg font-semibold">
                   {influencerResults.length} Perfect Matches Found
                 </h3>
-<
+
                 <Button variant="outline" size="sm" disabled>
                   Filter Results
                 </Button>
