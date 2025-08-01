@@ -449,7 +449,6 @@ function getLayoutStyle(persona: string): string {
   };
   
   return layouts[persona as keyof typeof layouts] || layouts.professional;
-<<<<<<< Updated upstream
 }
 
 function generateFuturisticFallbackWebsite(request: WebsiteGenerationRequest): WebsiteGenerationResponse {
@@ -614,7 +613,4 @@ function generateFuturisticFallbackWebsite(request: WebsiteGenerationRequest): W
     title: `${request.description.split(' ').slice(0, 3).join(' ')} - ${businessType}`,
     description: `A futuristic ${request.persona} website for your ${businessType.toLowerCase()} business`
   };
-} 
-=======
-} 
->>>>>>> Stashed changes
+}
