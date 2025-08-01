@@ -66,14 +66,14 @@ export function Navbar({ variant = "landing" }: NavbarProps) {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-50 w-full border-b bg-background backdrop-blur supports-[backdrop-filter]:bg-background">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-2 group">
-          <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-purple-500 to-teal-500 flex items-center justify-center group-hover:scale-110 transition-transform">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <span className="text-xl font-bold bg-gradient-to-r from-purple-500 to-teal-500 bg-clip-text text-transparent">
             Boostly
           </span>
         </Link>
@@ -101,7 +101,7 @@ export function Navbar({ variant = "landing" }: NavbarProps) {
               <Button asChild variant="outline" size="sm">
                 <Link to="/login">Login</Link>
               </Button>
-              <Button asChild size="sm" className="bg-gradient-primary hover:opacity-90">
+              <Button asChild size="sm" className="bg-gradient-to-r from-purple-500 to-teal-500 hover:opacity-90">
                 <Link to="/signup">Start Free</Link>
               </Button>
             </>

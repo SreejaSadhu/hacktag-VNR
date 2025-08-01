@@ -17,9 +17,11 @@ import {
   ChevronRight
 } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const navigate = useNavigate();
 
   const features = [
     {
@@ -66,22 +68,22 @@ const Index = () => {
     {
       name: "Modern Bakery",
       category: "Food & Beverage",
-      image: "/api/placeholder/300/200"
+      image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=300&fit=crop&crop=center"
     },
     {
       name: "Tech Startup",
       category: "Technology",
-      image: "/api/placeholder/300/200"
+      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop&crop=center"
     },
     {
       name: "Creative Portfolio",
       category: "Design",
-      image: "/api/placeholder/300/200"
+      image: "https://images.unsplash.com/photo-1558655146-d09347e92766?w=400&h=300&fit=crop&crop=center"
     },
     {
       name: "Local Restaurant",
       category: "Food & Beverage", 
-      image: "/api/placeholder/300/200"
+      image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop&crop=center"
     }
   ];
 
@@ -114,6 +116,10 @@ const Index = () => {
     setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length);
   };
 
+  const handleStartFree = () => {
+    navigate('/onboarding');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar variant="landing" />
@@ -127,13 +133,13 @@ const Index = () => {
               ✨ New: AI-Powered Website Builder
             </Badge>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent animate-fade-in-up">
-              Build a website from a sentence.
+            Say it. Boostly builds it.
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
               Describe your business and watch AI create a stunning, professional website in seconds. No coding required.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-              <CTAButton size="lg" className="text-lg px-8 py-4">
+              <CTAButton size="lg" className="text-lg px-8 py-4" onClick={handleStartFree}>
                 Start for Free <ArrowRight className="ml-2 w-5 h-5" />
               </CTAButton>
               <Button variant="outline" size="lg" className="text-lg px-8 py-4">
@@ -209,7 +215,7 @@ const Index = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {templates.map((template, index) => (
               <Card key={index} className="overflow-hidden hover-lift border-0 shadow-soft">
-                <div className="aspect-[4/3] bg-gradient-secondary" />
+                <div className="aspect-[4/3] bg-cover bg-center" style={{ backgroundImage: `url(${template.image})` }} />
                 <CardHeader>
                   <CardTitle className="text-lg">{template.name}</CardTitle>
                   <Badge variant="secondary" className="w-fit">{template.category}</Badge>
@@ -249,7 +255,10 @@ const Index = () => {
                 </CTAButton>
               </div>
               <div className="lg:order-first">
-                <div className="aspect-square rounded-2xl bg-gradient-secondary" />
+                <div 
+                  className="aspect-square rounded-2xl bg-cover bg-center" 
+                  style={{ backgroundImage: `url(https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=500&h=500&fit=crop&crop=center)` }}
+                />
               </div>
             </div>
           </div>

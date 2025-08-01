@@ -48,10 +48,8 @@ export default function Signup() {
       lastName: lastName
     }));
 
-
-
-    // Redirect to dashboard
-    navigate('/dashboard');
+    // Redirect to onboarding
+    navigate('/onboarding');
     setIsLoading(false);
   };
 
