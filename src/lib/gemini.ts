@@ -102,7 +102,7 @@ export async function generateWebsite(request: WebsiteGenerationRequest): Promis
     }
     
     console.log('🔑 API key found, initializing Gemini...');
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
     // Analyze business type from description
     const businessType = analyzeBusinessType(request.description);
@@ -112,55 +112,85 @@ export async function generateWebsite(request: WebsiteGenerationRequest): Promis
     console.log('📊 Business Analysis:', { businessType, persona: request.persona, colorScheme });
 
     const prompt = `
-🔮 SYSTEM PROMPT — Futuristic Website Generator
+🔮 SYSTEM PROMPT — Foolproof Website Generator
 
-Mission: Design a visually breathtaking, ultra-modern website for the following project:
+MISSION: Generate a beautiful, modern, and responsive website with full styling, structured layout, high-quality visuals, and engaging animations. NO plain designs. NO lorem ipsum. NO empty or unstyled sections.
 
-🧠 Description: ${request.description}
-🏢 Business Type: ${businessType}
-🧬 Design Personality: ${request.persona}
-🎨 Color Palette: ${colorScheme}
+🧠 Description: ${request.description}  
+🏢 Business Type: ${businessType}  
+🧬 Design Personality: ${request.persona}  
+🎨 Color Scheme: ${colorScheme}  
 📐 Layout Style: ${layoutStyle}
 
-💡 Design Directives
-Craft a next-gen website interface that embodies cutting-edge aesthetics and immersive interactivity:
+-------------------------------------------
+✅ ABSOLUTE STRUCTURE (MANDATORY SECTIONS)
+-------------------------------------------
+1. Hero Section:
+- Full screen or 80vh section
+- Large, bold heading, subheading & primary CTA button
+- Background must be a high-res image, gradient, or animation
+- Include entrance animation (e.g. fadeIn, zoomIn)
 
-🌌 FUTURISTIC UI ELEMENTS:
-- Glassmorphism with backdrop-filter blur effects
-- Vibrant gradients with subtle animations
-- Floating elements with subtle parallax effects
-- Neon accents and glow effects
-- Modern card designs with hover states
-- Clean, readable typography with proper hierarchy
+2. About Section:
+- Split layout: image left, text right
+- Subtle scroll animation
+- Professional tone
 
-📱 RESPONSIVE REQUIREMENTS:
-- Fully responsive design that works on all devices
-- Mobile-first approach with adaptive layouts
-- Touch-friendly interface elements
-- Proper spacing and sizing across viewports
+3. Features/Services Grid:
+- 3 to 6 modern cards with icons or images
+- Must have hover effects (lift, shadow, gradient glow)
+- Real feature names & benefit-oriented descriptions
 
-🧩 PAGE STRUCTURE:
-- Hero section with compelling headline and CTA
-- About/Features section highlighting key offerings
-- Testimonials or social proof section
-- Contact/CTA section with clear next steps
-- Modern navigation that's intuitive and accessible
-- Footer with essential links and information
+4. Testimonials Section:
+- At least 2–3 quotes or reviews with avatar or name
+- Smooth carousel or card layout
+- Subtle animations on load or scroll
 
-🎯 CONTENT GUIDELINES:
-- Write real, professional content based on the business description
-- Include compelling headlines and persuasive copy
-- Focus on benefits and unique selling points
-- No lorem ipsum or placeholder text
-- Include realistic calls-to-action
+5. Call to Action Section:
+- Bold message with image or pattern background
+- Vibrant CTA button
+- Clear user direction
 
-Return ONLY this JSON format:
+6. Footer:
+- Include logo, navigation links, social icons, and copyright
+
+-------------------------------------------
+🎨 DESIGN ENFORCEMENT (NO EXCEPTIONS)
+-------------------------------------------
+- Must use glassmorphism, gradient, or vibrant colors in at least 2 sections  
+- All sections must have padding, consistent spacing, and modern font (e.g., Poppins, Inter)  
+- All interactive elements (cards, buttons) must have hover and transition effects  
+- Scroll-triggered animations (like AOS) must be used for all major sections  
+- Must include at least 3 high-resolution images (Unsplash or similar)  
+- Use icons for feature sections (Lucide, Heroicons, Font Awesome, etc.)
+
+-------------------------------------------
+📱 RESPONSIVE DESIGN (MUST)
+-------------------------------------------
+- Mobile-first layout  
+- Adaptive grids and stacking  
+- Touch-friendly buttons and spacing
+
+-------------------------------------------
+✍️ CONTENT GUIDELINES
+-------------------------------------------
+- Use real, persuasive, benefit-driven content  
+- No placeholder or lorem ipsum text  
+- Use call-to-action words like "Explore Now", "Get Started", "Join the Future", etc.
+
+-------------------------------------------
+📦 OUTPUT FORMAT
+-------------------------------------------
+Return only this JSON structure:
+
 {
-  "html": "<full futuristic HTML code here>",
-  "css": "<beautifully animated, responsive CSS here>",
+  "html": "<COMPLETE HTML with structured sections, proper classes and IDs>",
+  "css": "<COMPLETE CSS with media queries, animations, and styling>",
   "title": "Business Name",
-  "description": "A concise, compelling description of the site purpose and style"
+  "description": "Short, compelling summary of the brand and visual style"
 }
+
+❌ IF ANY SECTION LOOKS PLAIN, IS MISSING STYLING, OR LACKS ANIMATION — REJECT AND REGENERATE. BASIC SITES ARE NOT ACCEPTABLE.
 `;
 
     console.log('🚀 Sending request to Gemini API...');
@@ -267,7 +297,7 @@ export async function generateEmail(request: EmailGenerationRequest): Promise<Em
     }
     
     console.log('🔑 API key found, initializing Gemini...');
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
     // Analyze business type from objective
     const businessType = analyzeBusinessType(request.objective);
