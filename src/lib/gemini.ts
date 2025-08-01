@@ -85,6 +85,18 @@ export interface EmailGenerationResponse {
   description: string;
 }
 
+export interface InsightGenerationRequest {
+  businessDescription: string;
+}
+
+export interface InsightResponse {
+  competitors: string;
+  seo: string;
+  prosAndCons: string;
+  marketRelevance: string;
+  futureScore: string;
+}
+
 export async function generateWebsite(request: WebsiteGenerationRequest): Promise<WebsiteGenerationResponse> {
   try {
     console.log('🔍 Starting website generation for:', request.description);
@@ -377,6 +389,138 @@ Return ONLY this JSON format:
       subject: '❌ Generation Failed',
       content: `Error: ${error.message}\n\nPlease check your API key and try again.`,
       description: `Failed to generate email: ${error.message}`
+    };
+  }
+}
+
+export async function generateInsights(request: InsightGenerationRequest): Promise<InsightResponse> {
+  try {
+    console.log('🔍 Starting insights generation for:', request.businessDescription);
+    
+    // Check if API key is set
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error('❌ No Gemini API key found in environment variables');
+      return {
+        competitors: '❌ API Key Missing - Please set VITE_GEMINI_API_KEY in your .env file',
+        seo: '❌ API Key Missing - Please set VITE_GEMINI_API_KEY in your .env file',
+        prosAndCons: '❌ API Key Missing - Please set VITE_GEMINI_API_KEY in your .env file',
+        marketRelevance: '❌ API Key Missing - Please set VITE_GEMINI_API_KEY in your .env file',
+        futureScore: '❌ API Key Missing - Please set VITE_GEMINI_API_KEY in your .env file'
+      };
+    }
+    
+    console.log('🔑 API key found, initializing Gemini...');
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const prompt = `
+You are a friendly business consultant who gives practical, human advice. Based on the business description provided, give general market insights and trends that would be relevant for this type of business.
+
+Business: "${request.businessDescription}"
+
+Give me 5 general market insights in this exact JSON format:
+
+{
+  "competitors": "• General competitive landscape in this industry\\n• Common business models and strategies\\n• Market positioning opportunities",
+  "seo": "• Popular search trends in this sector\\n• Content marketing opportunities\\n• Digital presence strategies",
+  "prosAndCons": "• Industry strengths and advantages\\n• Common challenges and risks\\n• Best practices for success",
+  "marketRelevance": "• Current market demand and trends\\n• Target audience insights\\n• Growth opportunities in the market",
+  "futureScore": "• Industry growth potential: X/10\\n• Emerging trends and opportunities\\n• Strategic recommendations for the future"
+}
+
+Focus on general market insights, industry trends, and broad business advice. Keep it conversational, practical, and fun. Use bullet points, keep it short, and make it feel like advice from a friend who knows the market.
+`;
+
+    console.log('🚀 Sending insights request to Gemini API...');
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    console.log('📥 Raw API response received:', text.substring(0, 200) + '...');
+
+    // Try multiple approaches to extract JSON
+    let jsonMatch = text.match(/\{[\s\S]*\}/);
+    let parsedResponse;
+    
+    if (!jsonMatch) {
+      console.error('❌ No JSON found in API response');
+      return {
+        competitors: '❌ Invalid Response - API returned invalid format. Please try again.',
+        seo: '❌ Invalid Response - API returned invalid format. Please try again.',
+        prosAndCons: '❌ Invalid Response - API returned invalid format. Please try again.',
+        marketRelevance: '❌ Invalid Response - API returned invalid format. Please try again.',
+        futureScore: '❌ Invalid Response - API returned invalid format. Please try again.'
+      };
+    }
+
+    try {
+      console.log('🔍 Extracted JSON from response');
+      parsedResponse = JSON.parse(jsonMatch[0]);
+    } catch (parseError) {
+      console.error('❌ JSON parsing failed:', parseError);
+      console.log('🔍 Raw JSON string:', jsonMatch[0]);
+      
+      // Try to clean the JSON string
+      let cleanedJson = jsonMatch[0];
+      
+      // Remove any text before the first {
+      cleanedJson = cleanedJson.substring(cleanedJson.indexOf('{'));
+      
+      // Remove any text after the last }
+      cleanedJson = cleanedJson.substring(0, cleanedJson.lastIndexOf('}') + 1);
+      
+      // Try to fix common JSON issues
+      cleanedJson = cleanedJson.replace(/,\s*}/g, '}'); // Remove trailing commas
+      cleanedJson = cleanedJson.replace(/,\s*]/g, ']'); // Remove trailing commas in arrays
+      
+      try {
+        parsedResponse = JSON.parse(cleanedJson);
+        console.log('✅ Successfully parsed cleaned JSON');
+      } catch (secondError) {
+        console.error('❌ Second JSON parsing attempt failed:', secondError);
+        return {
+          competitors: '❌ JSON Parse Error - API returned malformed JSON. Please try again.',
+          seo: '❌ JSON Parse Error - API returned malformed JSON. Please try again.',
+          prosAndCons: '❌ JSON Parse Error - API returned malformed JSON. Please try again.',
+          marketRelevance: '❌ JSON Parse Error - API returned malformed JSON. Please try again.',
+          futureScore: '❌ JSON Parse Error - API returned malformed JSON. Please try again.'
+        };
+      }
+    }
+
+    if (!parsedResponse.competitors || !parsedResponse.seo || !parsedResponse.prosAndCons || !parsedResponse.marketRelevance || !parsedResponse.futureScore) {
+      console.error('❌ Incomplete response from API:', parsedResponse);
+      return {
+        competitors: '❌ Incomplete Response - API response missing required fields. Please try again.',
+        seo: '❌ Incomplete Response - API response missing required fields. Please try again.',
+        prosAndCons: '❌ Incomplete Response - API response missing required fields. Please try again.',
+        marketRelevance: '❌ Incomplete Response - API response missing required fields. Please try again.',
+        futureScore: '❌ Incomplete Response - API response missing required fields. Please try again.'
+      };
+    }
+
+    console.log('✅ Successfully generated insights with Gemini API');
+    console.log('📊 Competitors analysis length:', parsedResponse.competitors.length);
+    console.log('🔍 SEO insights length:', parsedResponse.seo.length);
+    console.log('📈 Pros/Cons length:', parsedResponse.prosAndCons.length);
+    console.log('🎯 Market relevance length:', parsedResponse.marketRelevance.length);
+    console.log('🚀 Future score length:', parsedResponse.futureScore.length);
+
+    return {
+      competitors: parsedResponse.competitors,
+      seo: parsedResponse.seo,
+      prosAndCons: parsedResponse.prosAndCons,
+      marketRelevance: parsedResponse.marketRelevance,
+      futureScore: parsedResponse.futureScore
+    };
+  } catch (error: any) {
+    console.error('❌ Error generating insights with Gemini API:', error);
+    return {
+      competitors: `❌ Generation Failed - Error: ${error.message}. Please check your API key and try again.`,
+      seo: `❌ Generation Failed - Error: ${error.message}. Please check your API key and try again.`,
+      prosAndCons: `❌ Generation Failed - Error: ${error.message}. Please check your API key and try again.`,
+      marketRelevance: `❌ Generation Failed - Error: ${error.message}. Please check your API key and try again.`,
+      futureScore: `❌ Generation Failed - Error: ${error.message}. Please check your API key and try again.`
     };
   }
 }

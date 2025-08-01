@@ -15,6 +15,8 @@ import GenerateWebsite from "./pages/dashboard/GenerateWebsite";
 import MyWebsites from "./pages/dashboard/MyWebsites";
 import InfluencerMatch from "./pages/dashboard/InfluencerMatch";
 import EmailMarketing from "./pages/dashboard/EmailMarketing";
+import AIInsights from "./pages/dashboard/AIInsights";
+import RealTimeFeatures from "./pages/dashboard/RealTimeFeatures";
 import Chatbot from "./pages/dashboard/Chatbot";
 import FeedbackAnalyzer from "./pages/dashboard/FeedbackAnalyzer";
 import Analytics from "./pages/dashboard/Analytics";
@@ -44,6 +46,8 @@ const App = () => (
               <Route path="websites" element={<MyWebsites />} />
               <Route path="influencer" element={<InfluencerMatch />} />
               <Route path="email" element={<EmailMarketing />} />
+              <Route path="insights" element={<AIInsights />} />
+              <Route path="realtime" element={<RealTimeFeatures />} />
               <Route path="chatbot" element={<Chatbot />} />
               <Route path="feedback" element={<FeedbackAnalyzer />} />
               <Route path="analytics" element={<Analytics />} />

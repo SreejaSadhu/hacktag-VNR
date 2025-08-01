@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import NotificationCenter from "@/components/notifications/NotificationCenter";
 import { Bell, User, Settings, LogOut, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -108,14 +109,7 @@ export function Navbar({ variant = "landing" }: NavbarProps) {
             // Dashboard navigation
             <>
               {/* Notifications */}
-              <Button variant="ghost" size="sm" className="relative">
-                <Bell className="w-4 h-4" />
-                {notifications > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
-                    {notifications}
-                  </span>
-                )}
-              </Button>
+              <NotificationCenter />
 
               <ThemeToggle />
 

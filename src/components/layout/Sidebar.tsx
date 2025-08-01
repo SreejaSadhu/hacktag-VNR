@@ -6,6 +6,8 @@ import {
   Globe,
   Users,
   Mail,
+  Lightbulb,
+  Zap,
   Bot,
   MessageSquare,
   BarChart3,
@@ -42,6 +44,16 @@ const navigationItems = [
     title: "Email Marketing",
     href: "/dashboard/email",
     icon: Mail,
+  },
+  {
+    title: "AI Insights",
+    href: "/dashboard/insights",
+    icon: Lightbulb,
+  },
+  {
+    title: "Real-Time Features",
+    href: "/dashboard/realtime",
+    icon: Zap,
   },
   {
     title: "Chatbot",
