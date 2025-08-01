@@ -1,0 +1,63 @@
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "@/hooks/use-theme";
+
+// Pages
+import Index from "./pages/Index";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import DashboardLayout from "./pages/dashboard/DashboardLayout";
+import Dashboard from "./pages/dashboard/Dashboard";
+import GenerateWebsite from "./pages/dashboard/GenerateWebsite";
+import MyWebsites from "./pages/dashboard/MyWebsites";
+import InfluencerMatch from "./pages/dashboard/InfluencerMatch";
+import EmailMarketing from "./pages/dashboard/EmailMarketing";
+import Chatbot from "./pages/dashboard/Chatbot";
+import FeedbackAnalyzer from "./pages/dashboard/FeedbackAnalyzer";
+import Analytics from "./pages/dashboard/Analytics";
+import Community from "./pages/dashboard/Community";
+import Settings from "./pages/dashboard/Settings";
+import NotFound from "./pages/NotFound";
+
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider defaultTheme="light" storageKey="boostly-theme">
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            
+            {/* Dashboard Routes */}
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="generate" element={<GenerateWebsite />} />
+              <Route path="websites" element={<MyWebsites />} />
+              <Route path="influencer" element={<InfluencerMatch />} />
+              <Route path="email" element={<EmailMarketing />} />
+              <Route path="chatbot" element={<Chatbot />} />
+              <Route path="feedback" element={<FeedbackAnalyzer />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="community" element={<Community />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
+            
+            {/* Catch-all */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
+  </QueryClientProvider>
+);
+
+export default App;

@@ -1,0 +1,208 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Boostly Design System - Inspired by Neura with calming pastels */
+
+@layer base {
+  :root {
+    /* Neura-inspired Soft Pastels */
+    --background: 0 0% 99%;
+    --foreground: 240 8% 20%;
+
+    /* Cards with subtle elevation */
+    --card: 0 0% 100%;
+    --card-foreground: 240 8% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 8% 20%;
+
+    /* Primary - Soft Purple like Neura */
+    --primary: 270 50% 85%;
+    --primary-foreground: 270 20% 25%;
+
+    /* Secondary - Soft Mint Green */
+    --secondary: 140 40% 85%;
+    --secondary-foreground: 140 20% 25%;
+
+    /* Muted with more warmth */
+    --muted: 240 8% 96%;
+    --muted-foreground: 240 6% 50%;
+
+    /* Accent - Soft Peach */
+    --accent: 20 60% 88%;
+    --accent-foreground: 20 30% 25%;
+
+    /* Soft status colors */
+    --success: 140 40% 80%;
+    --success-foreground: 140 30% 25%;
+    --warning: 35 70% 82%;
+    --warning-foreground: 35 40% 25%;
+    --destructive: 0 50% 75%;
+    --destructive-foreground: 0 30% 25%;
+
+    /* Subtle borders */
+    --border: 240 8% 92%;
+    --input: 240 8% 92%;
+    --ring: 270 50% 85%;
+
+    /* Larger radius for Neura style */
+    --radius: 1rem;
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 99%;
+    --sidebar-foreground: 240 8% 20%;
+    --sidebar-primary: 270 50% 85%;
+    --sidebar-primary-foreground: 270 20% 25%;
+    --sidebar-accent: 240 8% 96%;
+    --sidebar-accent-foreground: 240 8% 20%;
+    --sidebar-border: 240 8% 92%;
+    --sidebar-ring: 270 50% 85%;
+
+    /* Neura-style gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(270 50% 90%), hsl(140 40% 90%), hsl(20 60% 90%));
+    --gradient-secondary: linear-gradient(120deg, hsl(140 40% 88%), hsl(180 30% 88%));
+    --gradient-hero: linear-gradient(150deg, hsl(270 30% 97%), hsl(140 20% 97%), hsl(20 30% 97%));
+
+    /* Softer shadows */
+    --shadow-soft: 0 2px 20px -8px hsl(270 50% 85% / 0.15);
+    --shadow-medium: 0 8px 40px -12px hsl(270 50% 85% / 0.2);
+    --shadow-large: 0 20px 60px -16px hsl(270 50% 85% / 0.25);
+  }
+
+  .dark {
+    /* Dark Mode - Soft & Elegant */
+    --background: 240 10% 8%;
+    --foreground: 0 0% 95%;
+
+    --card: 240 10% 10%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 240 10% 10%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 253 91% 75%;
+    --primary-foreground: 240 10% 8%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 95%;
+
+    --success: 142 76% 65%;
+    --success-foreground: 240 10% 8%;
+
+    --warning: 38 92% 65%;
+    --warning-foreground: 240 10% 8%;
+
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 0 0% 95%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 253 91% 75%;
+
+    --sidebar-background: 240 10% 8%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 253 91% 75%;
+    --sidebar-primary-foreground: 240 10% 8%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 253 91% 75%;
+
+    /* Dark Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(253 91% 55%), hsl(142 76% 55%));
+    --gradient-secondary: linear-gradient(135deg, hsl(142 76% 55%), hsl(25 95% 55%));
+    --gradient-hero: linear-gradient(135deg, hsl(240 10% 15%), hsl(253 91% 15%), hsl(142 76% 15%));
+
+    /* Dark Shadows */
+    --shadow-soft: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
+    --shadow-medium: 0 8px 30px -6px hsl(0 0% 0% / 0.4);
+    --shadow-large: 0 20px 60px -12px hsl(0 0% 0% / 0.5);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-geist;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    letter-spacing: -0.01em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-geist font-semibold;
+    letter-spacing: -0.025em;
+  }
+
+  h1 { @apply text-4xl md:text-6xl lg:text-7xl leading-[1.1]; }
+  h2 { @apply text-3xl md:text-4xl lg:text-5xl leading-[1.2]; }
+  h3 { @apply text-2xl md:text-3xl lg:text-4xl leading-[1.2]; }
+}
+
+@layer components {
+  /* Gradient Backgrounds */
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .bg-gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+  
+  .bg-gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  /* Shadow Utilities */
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  
+  .shadow-medium {
+    box-shadow: var(--shadow-medium);
+  }
+  
+  .shadow-large {
+    box-shadow: var(--shadow-large);
+  }
+
+  /* Glass Effect */
+  .glass {
+    @apply bg-white/10 backdrop-blur-lg border border-white/20;
+  }
+
+  .glass-dark {
+    @apply bg-black/10 backdrop-blur-lg border border-black/20;
+  }
+
+  /* Animation Utilities */
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+  
+  .transition-bounce {
+    transition: var(--transition-bounce);
+  }
+
+  /* Hover Animations */
+  .hover-lift {
+    @apply transition-smooth hover:-translate-y-1 hover:shadow-medium;
+  }
+
+  .hover-scale {
+    @apply transition-smooth hover:scale-105;
+  }
+
+  .hover-glow {
+    @apply transition-smooth hover:shadow-large;
+  }
+}
