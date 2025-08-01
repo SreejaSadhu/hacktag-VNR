@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Bell, User, Settings, LogOut, Sparkles } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface NavbarProps {
   variant?: "landing" | "dashboard";
@@ -19,6 +20,49 @@ interface NavbarProps {
 
 export function Navbar({ variant = "landing" }: NavbarProps) {
   const [notifications] = useState(3);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  // Get user data from localStorage
+  const userData = localStorage.getItem('user');
+  const user = userData ? JSON.parse(userData) : null;
+
+  const handleLogout = () => {
+    // Clear user session
+    localStorage.removeItem('user');
+    
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+    });
+
+    // Redirect to home page
+    navigate('/');
+  };
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user) return "JD";
+    if (user.name) {
+      return user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase();
+    }
+    if (user.email) {
+      return user.email[0].toUpperCase();
+    }
+    return "U";
+  };
+
+  // Get user display name
+  const getUserDisplayName = () => {
+    if (!user) return "John Doe";
+    return user.name || user.email?.split('@')[0] || "User";
+  };
+
+  // Get user email
+  const getUserEmail = () => {
+    if (!user) return "john@example.com";
+    return user.email || "user@example.com";
+  };
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -47,12 +91,6 @@ export function Navbar({ variant = "landing" }: NavbarProps) {
                 </Link>
                 <Link 
                   to="#templates" 
-                  className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-                >
-                  Templates
-                </Link>
-                <Link 
-                  to="#pricing" 
                   className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
                 >
                   Pricing
@@ -87,16 +125,16 @@ export function Navbar({ variant = "landing" }: NavbarProps) {
                   <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                     <Avatar className="h-9 w-9">
                       <AvatarImage src="/avatars/user.png" alt="User" />
-                      <AvatarFallback>JD</AvatarFallback>
+                      <AvatarFallback>{getUserInitials()}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">John Doe</p>
+                      <p className="text-sm font-medium leading-none">{getUserDisplayName()}</p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        john@example.com
+                        {getUserEmail()}
                       </p>
                     </div>
                   </DropdownMenuLabel>
@@ -114,7 +152,7 @@ export function Navbar({ variant = "landing" }: NavbarProps) {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" />
                     Log out
                   </DropdownMenuItem>
