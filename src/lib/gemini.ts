@@ -134,9 +134,9 @@ export async function generateWebsite(request: WebsiteGenerationRequest): Promis
 
 MISSION: Generate a beautiful, modern, and responsive website with full styling, structured layout, high-quality visuals, and engaging animations. NO plain designs. NO lorem ipsum. NO empty or unstyled sections.
 
-🧠 Description: ${request.description}  
-🏢 Business Type: ${businessType}  
-🧬 Design Personality: ${request.persona}  
+🧠 Description: ${request.description}
+🏢 Business Type: ${businessType}
+🧬 Design Personality: ${request.persona}
 🎨 Color Scheme: ${colorScheme}  
 📐 Layout Style: ${layoutStyle}
 
@@ -215,9 +215,9 @@ Return only this JSON structure:
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    
+
     console.log('📥 Raw API response received:', text.substring(0, 200) + '...');
-    
+
     // Try multiple approaches to extract JSON
     let jsonMatch = text.match(/\{[\s\S]*\}/);
     let parsedResponse;
@@ -281,7 +281,7 @@ Return only this JSON structure:
     console.log('📄 Description:', parsedResponse.description);
     console.log('🔧 HTML length:', parsedResponse.html.length);
     console.log('🎨 CSS length:', parsedResponse.css.length);
-    
+
     return {
       html: parsedResponse.html,
       css: parsedResponse.css,
