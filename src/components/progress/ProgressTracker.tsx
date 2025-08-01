@@ -268,108 +268,11 @@ export default function ProgressTracker() {
         </CardContent>
       </Card>
 
-      {/* Active Milestones */}
-      <Card className="border-0 shadow-soft">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Target className="h-5 w-5 text-primary" />
-            <span>Active Milestones</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {activeMilestones.map((milestone) => (
-            <div key={milestone.id} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">{milestone.title}</h4>
-                  <p className="text-sm text-muted-foreground">{milestone.description}</p>
-                </div>
-                <Badge variant="secondary">{milestone.reward}</Badge>
-              </div>
-              <div className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span>{milestone.current} / {milestone.target} {milestone.unit}</span>
-                  <span>{Math.round((milestone.current / milestone.target) * 100)}%</span>
-                </div>
-                <Progress value={(milestone.current / milestone.target) * 100} className="h-2" />
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+      
 
-      {/* Achievements */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Unlocked Achievements */}
-        <Card className="border-0 shadow-soft">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              <span>Unlocked Achievements ({unlockedAchievements.length})</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {unlockedAchievements.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                <Trophy className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No achievements unlocked yet</p>
-                <p className="text-sm">Keep using the platform to earn achievements!</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {unlockedAchievements.map((achievement) => (
-                  <div key={achievement.id} className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                    <div className="text-2xl">{achievement.icon}</div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-green-700">{achievement.title}</h4>
-                      <p className="text-sm text-green-600">{achievement.description}</p>
-                      <p className="text-xs text-green-500 mt-1">
-                        Unlocked {achievement.unlockedAt?.toLocaleDateString()}
-                      </p>
-                    </div>
-                    <Badge variant="secondary" className="bg-green-100 text-green-700">
-                      {achievement.reward}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Locked Achievements */}
-        <Card className="border-0 shadow-soft">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-gray-500" />
-              <span>Locked Achievements ({lockedAchievements.length})</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {lockedAchievements.map((achievement) => (
-                <div key={achievement.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg opacity-60">
-                  <div className="text-2xl">{achievement.icon}</div>
-                  <div className="flex-1">
-                    <h4 className="font-medium">{achievement.title}</h4>
-                    <p className="text-sm text-muted-foreground">{achievement.description}</p>
-                    <div className="mt-2">
-                      <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                        <span>Progress</span>
-                        <span>{achievement.progress} / {achievement.maxProgress}</span>
-                      </div>
-                      <Progress value={(achievement.progress / achievement.maxProgress) * 100} className="h-1" />
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="text-xs">
-                    {achievement.reward}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+     
+                
+            
 
       {/* Completed Milestones */}
       {completedMilestones.length > 0 && (

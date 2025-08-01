@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AILoading } from "@/components/ui/LoadingSpinner";
-import { useToast } from "@/hooks/use-toast";
+
 import { generateInsights, type InsightResponse } from "@/lib/gemini";
 import { 
   Lightbulb, 
@@ -33,7 +33,7 @@ export default function AIInsights() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [insights, setInsights] = useState<InsightData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
+
 
   const handleGenerateInsights = async () => {
     if (!businessPrompt.trim()) return;
@@ -49,26 +49,15 @@ export default function AIInsights() {
       // Check if the result contains an error message
       if (result.competitors.startsWith('❌')) {
         setError(result.competitors);
-        toast({
-          title: "Generation Failed",
-          description: result.competitors,
-          variant: "destructive",
-        });
+
       } else {
         setInsights(result);
-        toast({
-          title: "Insights Generated!",
-          description: "Your business insights have been created successfully.",
-        });
+
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to generate insights";
       setError(errorMessage);
-      toast({
-        title: "Generation Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
+
     } finally {
       setIsGenerating(false);
     }
@@ -76,10 +65,7 @@ export default function AIInsights() {
 
   const handleCopy = (content: string, title: string) => {
     navigator.clipboard.writeText(content);
-    toast({
-      title: "Copied!",
-      description: `${title} copied to clipboard.`,
-    });
+
   };
 
   const handleRegenerate = () => {

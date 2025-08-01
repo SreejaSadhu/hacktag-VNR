@@ -31,11 +31,6 @@ const navigationItems = [
     icon: Sparkles,
   },
   {
-    title: "My Websites",
-    href: "/dashboard/websites",
-    icon: Globe,
-  },
-  {
     title: "Influencer Match",
     href: "/dashboard/influencer",
     icon: Users,

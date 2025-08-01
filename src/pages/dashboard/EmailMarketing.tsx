@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AILoading } from "@/components/ui/LoadingSpinner";
-import { useToast } from "@/hooks/use-toast";
+
 import { generateEmail, EmailGenerationResponse } from "@/lib/gemini";
 import { 
   Mail, 
@@ -26,7 +26,7 @@ export default function EmailMarketing() {
   const [error, setError] = useState<string | null>(null);
   const [uploadedEmails, setUploadedEmails] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const { toast } = useToast();
+
 
   const handleGenerate = async () => {
     if (!goal.trim()) return;
@@ -42,29 +42,18 @@ export default function EmailMarketing() {
       // Check if the result contains an error message
       if (result.subject.startsWith('❌')) {
         setError(result.description);
-        toast({
-          title: "Generation Failed",
-          description: result.description,
-          variant: "destructive",
-        });
+
       } else {
         setEmailSubject(result.subject);
         setEmailContent(result.content);
         setEmailDescription(result.description);
         setHasGenerated(true);
-        toast({
-          title: "Email Generated!",
-          description: "Your marketing email has been created successfully.",
-        });
+
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to generate email";
       setError(errorMessage);
-      toast({
-        title: "Generation Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
+
     } finally {
       setIsGenerating(false);
     }
@@ -73,10 +62,7 @@ export default function EmailMarketing() {
   const handleCopy = () => {
     const fullEmail = `Subject: ${emailSubject}\n\n${emailContent}`;
     navigator.clipboard.writeText(fullEmail);
-    toast({
-      title: "Copied!",
-      description: "Email content copied to clipboard.",
-    });
+
   };
 
   const handleRegenerate = () => {
@@ -91,11 +77,7 @@ export default function EmailMarketing() {
     
     // Check if it's an Excel file
     if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
-      toast({
-        title: "Invalid File",
-        description: "Please upload an Excel file (.xlsx or .xls)",
-        variant: "destructive",
-      });
+      
       setIsUploading(false);
       return;
     }
@@ -119,24 +101,13 @@ export default function EmailMarketing() {
         });
 
         if (emails.length === 0) {
-          toast({
-            title: "No Emails Found",
-            description: "No valid email addresses found in the file",
-            variant: "destructive",
-          });
+
         } else {
           setUploadedEmails(emails);
-          toast({
-            title: "Emails Uploaded",
-            description: `Found ${emails.length} email addresses`,
-          });
+
         }
       } catch (error) {
-        toast({
-          title: "Upload Failed",
-          description: "Failed to read the file. Please try again.",
-          variant: "destructive",
-        });
+
       }
       setIsUploading(false);
     };

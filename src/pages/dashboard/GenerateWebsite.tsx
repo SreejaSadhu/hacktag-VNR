@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, Wand2, Download, Eye, AlertCircle, Code, Laptop, Image } from "lucide-react";
+import { Sparkles, Wand2, Download, Eye, AlertCircle, Code, Laptop, Image, Globe, Search, Plus, Trash2, Filter } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { generateWebsite, generateImage, WebsiteGenerationResponse, ImageGenerationResponse } from "@/lib/gemini";
-import { useToast } from "@/hooks/use-toast";
-import { saveWebsite } from "@/utils/websiteStorage";
+
+import { saveWebsite, getStoredWebsites, deleteWebsite, StoredWebsite } from "@/utils/websiteStorage";
 import { v4 as uuidv4 } from "uuid";
 
 export default function GenerateWebsite() {
@@ -28,7 +31,67 @@ export default function GenerateWebsite() {
   const [generatedImages, setGeneratedImages] = useState<ImageGenerationResponse[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
   
-  const { toast } = useToast();
+  // My Websites state
+  const [websites, setWebsites] = useState<StoredWebsite[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    setWebsites(getStoredWebsites());
+  }, []);
+
+  const handleDelete = (id: string) => {
+    deleteWebsite(id);
+    setWebsites(getStoredWebsites());
+  };
+
+  const handlePreview = (website: StoredWebsite) => {
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>${website.title}</title>
+        <style>${website.css}</style>
+      </head>
+      <body>${website.html}</body>
+      </html>
+    `;
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.write(htmlContent);
+      newWindow.document.close();
+    }
+  };
+
+  const handlePreviewGenerated = () => {
+    if (!generatedWebsite) return;
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${generatedWebsite.title}</title>
+    <style>
+        ${generatedWebsite.css}
+    </style>
+</head>
+<body>
+    ${generatedWebsite.html}
+</body>
+</html>
+    `;
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.write(htmlContent);
+      newWindow.document.close();
+    }
+  };
+
+  const filteredWebsites = websites.filter((website) =>
+    website.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    website.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleGenerateWebsite = async () => {
     if (!description.trim()) return;
@@ -49,19 +112,12 @@ export default function GenerateWebsite() {
         result.title === 'Incomplete Response'
       ) {
         setWebsiteError(result.description);
-        toast({
-          title: "Generation Failed",
-          description: result.description,
-          variant: "destructive",
-        });
+
       } else {
         setGeneratedWebsite(result);
         setHasGeneratedWebsite(true);
         setActiveTab("preview");
-        toast({
-          title: "Website Generated!",
-          description: "Your website has been created successfully.",
-        });
+
 
         // Save to localStorage
         saveWebsite({
@@ -72,15 +128,14 @@ export default function GenerateWebsite() {
           description: result.description,
           createdAt: new Date().toISOString(),
         });
+        
+        // Refresh websites list
+        setWebsites(getStoredWebsites());
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to generate website";
       setWebsiteError(errorMessage);
-      toast({
-        title: "Generation Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
+
     } finally {
       setIsGeneratingWebsite(false);
     }
@@ -114,35 +169,7 @@ export default function GenerateWebsite() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    toast({
-      title: "Downloaded!",
-      description: "Your website has been downloaded successfully.",
-    });
-  };
 
-  const handlePreview = () => {
-    if (!generatedWebsite) return;
-    const htmlContent = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${generatedWebsite.title}</title>
-    <style>
-        ${generatedWebsite.css}
-    </style>
-</head>
-<body>
-    ${generatedWebsite.html}
-</body>
-</html>
-    `;
-    const newWindow = window.open('', '_blank');
-    if (newWindow) {
-      newWindow.document.write(htmlContent);
-      newWindow.document.close();
-    }
   };
 
   const handleGenerateImage = async () => {
@@ -160,18 +187,11 @@ export default function GenerateWebsite() {
 
       setGeneratedImages(prev => [result, ...prev]);
       setImagePrompt('');
-      toast({
-        title: "Image Generated!",
-        description: "Your image has been created successfully.",
-      });
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to generate image";
       setImageError(errorMessage);
-      toast({
-        title: "Generation Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
+
     } finally {
       setIsGeneratingImage(false);
     }
@@ -185,10 +205,7 @@ export default function GenerateWebsite() {
     link.click();
     document.body.removeChild(link);
 
-    toast({
-      title: "Downloaded!",
-      description: "Your image has been downloaded successfully.",
-    });
+
   };
 
   return (
@@ -201,9 +218,7 @@ export default function GenerateWebsite() {
           </div>
         </div>
         <h1 className="text-3xl font-bold">Generate Content</h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Create stunning websites and images with AI-powered generation.
-        </p>
+        
       </div>
 
       {/* Error Display */}
@@ -231,7 +246,7 @@ export default function GenerateWebsite() {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="website" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="website" className="flex items-center space-x-2">
             <Wand2 className="w-4 h-4" />
             <span>Generate Website</span>
@@ -239,6 +254,10 @@ export default function GenerateWebsite() {
           <TabsTrigger value="image" className="flex items-center space-x-2">
             <Image className="w-4 h-4" />
             <span>Generate Image</span>
+          </TabsTrigger>
+          <TabsTrigger value="my-websites" className="flex items-center space-x-2">
+            <Globe className="w-4 h-4" />
+            <span>My Websites</span>
           </TabsTrigger>
         </TabsList>
 
@@ -251,9 +270,7 @@ export default function GenerateWebsite() {
                   <Wand2 className="w-5 h-5 mr-2" />
                   Tell us about your business
                 </CardTitle>
-                <CardDescription>
-                  The more details you provide, the better your website will be.
-                </CardDescription>
+                
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
@@ -296,7 +313,7 @@ export default function GenerateWebsite() {
                       </CardDescription>
                     </div>
                     <div className="flex space-x-2">
-                      <Button variant="outline" onClick={handlePreview}>
+                      <Button variant="outline" onClick={handlePreviewGenerated}>
                         <Eye className="w-4 h-4 mr-2" />
                         Open in New Tab
                       </Button>
@@ -384,9 +401,7 @@ export default function GenerateWebsite() {
                 <Image className="w-5 h-5 mr-2" />
                 Generate AI Images
               </CardTitle>
-              <CardDescription>
-                Describe what you want to see and let AI create stunning images for you.
-              </CardDescription>
+              
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
@@ -507,6 +522,143 @@ export default function GenerateWebsite() {
                     </div>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* My Websites Tab */}
+        <TabsContent value="my-websites" className="space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">My Websites</h1>
+              <p className="text-muted-foreground">Manage and edit your AI-generated websites</p>
+            </div>
+            <Button className="bg-gradient-primary hover:opacity-90">
+              <Plus className="w-4 h-4 mr-2" />
+              Generate New Site
+            </Button>
+          </div>
+
+          {/* Search and Filter */}
+          <Card className="border-0 shadow-soft">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Input
+                    placeholder="Search websites..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Button variant="outline">
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filter
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Websites Grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredWebsites.map((website) => (
+              <Card key={website.id} className="overflow-hidden hover-lift border-0 shadow-soft group">
+                {/* Thumbnail */}
+                <div className="aspect-[4/3] relative overflow-hidden border-b">
+                  <iframe
+                    srcDoc={`<!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <style>${website.css}</style>
+          </head>
+          <body>${website.html}</body>
+          </html>`}
+                    title={website.title}
+                    className="w-full h-full absolute inset-0"
+                    sandbox=""
+                    loading="lazy"
+                    style={{ border: "none", pointerEvents: "none", background: "#fff" }}
+                  />
+                  <div className="absolute top-3 left-3 z-10">
+                    <Badge className="bg-success text-success-foreground">
+                      Saved
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg font-semibold line-clamp-1">
+                        {website.title}
+                      </CardTitle>
+                      <CardDescription className="flex items-center mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          {website.description}
+                        </Badge>
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Switch checked={true} />
+                      <Globe className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="pt-0">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Created</span>
+                      <span className="font-medium">
+                        {new Date(website.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex space-x-2 pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handlePreview(website)}
+                      >
+                        <Eye className="w-3 h-3 mr-1" />
+                        Preview
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-destructive"
+                        onClick={() => handleDelete(website.id)}
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Empty State (if no websites) */}
+          {filteredWebsites.length === 0 && (
+            <Card className="border-0 shadow-soft">
+              <CardContent className="p-12 text-center">
+                <div className="w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Globe className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">No websites yet</h3>
+                <p className="text-muted-foreground mb-6">
+                  Create your first AI-generated website to get started.
+                </p>
+                <Button className="bg-gradient-primary hover:opacity-90">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Generate Your First Website
+                </Button>
               </CardContent>
             </Card>
           )}

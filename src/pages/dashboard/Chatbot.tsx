@@ -18,7 +18,7 @@ import {
   Loader2
 } from "lucide-react";
 import { geminiService, ChatMessage } from "@/lib/gemini";
-import { toast } from "sonner";
+
 
 export default function Chatbot() {
   const [inputMessage, setInputMessage] = useState("");
@@ -97,7 +97,7 @@ export default function Chatbot() {
       setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Error getting AI response:', error);
-      toast.error('Failed to get AI response. Please try again.');
+
       
       // Add error message
       const errorMessage: ChatMessage = {
@@ -122,7 +122,7 @@ export default function Chatbot() {
         timestamp: new Date()
       }
     ]);
-    toast.success('Started a new chat session');
+
   };
 
   const handlePromptClick = (prompt: string) => {

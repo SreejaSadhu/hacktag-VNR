@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, Eye, EyeOff } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,7 +13,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,11 +39,7 @@ export default function Login() {
       // Redirect to dashboard
       navigate('/dashboard');
     } else {
-      toast({
-        title: "Login Failed",
-        description: "Please enter both email and password.",
-        variant: "destructive",
-      });
+
     }
 
     setIsLoading(false);

@@ -122,11 +122,7 @@ export default function RealTimeFeatures() {
         </Card>
       </div>
 
-      {/* Live Activity Feed */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <ActivityFeed />
-        <ProgressTracker />
-      </div>
+      
 
       {/* Feature Benefits */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

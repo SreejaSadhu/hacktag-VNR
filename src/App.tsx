@@ -1,5 +1,4 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -12,7 +11,6 @@ import Signup from "./pages/Signup";
 import DashboardLayout from "./pages/dashboard/DashboardLayout";
 import Dashboard from "./pages/dashboard/Dashboard";
 import GenerateWebsite from "./pages/dashboard/GenerateWebsite";
-import MyWebsites from "./pages/dashboard/MyWebsites";
 import InfluencerMatch from "./pages/dashboard/InfluencerMatch";
 import EmailMarketing from "./pages/dashboard/EmailMarketing";
 import AIInsights from "./pages/dashboard/AIInsights";
@@ -30,8 +28,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="light" storageKey="boostly-theme">
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
+
         <BrowserRouter>
           <Routes>
             {/* Public Routes */}
@@ -43,7 +40,6 @@ const App = () => (
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="generate" element={<GenerateWebsite />} />
-              <Route path="websites" element={<MyWebsites />} />
               <Route path="influencer" element={<InfluencerMatch />} />
               <Route path="email" element={<EmailMarketing />} />
               <Route path="insights" element={<AIInsights />} />
