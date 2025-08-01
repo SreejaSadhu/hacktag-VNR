@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, Wand2, Download, Eye, AlertCircle, Code } from "lucide-react";
+import { Sparkles, Wand2, Download, Eye, AlertCircle, Code, Laptop } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { generateWebsite, WebsiteGenerationResponse } from "@/lib/gemini";
 import { useToast } from "@/hooks/use-toast";
 import { saveWebsite } from "@/utils/websiteStorage";
@@ -14,7 +15,7 @@ export default function GenerateWebsite() {
   const [hasGenerated, setHasGenerated] = useState(false);
   const [generatedWebsite, setGeneratedWebsite] = useState<WebsiteGenerationResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("code");
+  const [activeTab, setActiveTab] = useState("preview");
   const { toast } = useToast();
 
   const handleGenerate = async () => {
@@ -44,7 +45,7 @@ export default function GenerateWebsite() {
       } else {
         setGeneratedWebsite(result);
         setHasGenerated(true);
-        setActiveTab("code");
+        setActiveTab("preview");
         toast({
           title: "Website Generated!",
           description: "Your website has been created successfully.",
@@ -203,48 +204,89 @@ export default function GenerateWebsite() {
           {/* Website Info */}
           <Card className="border-0 shadow-soft">
             <CardHeader>
-              <CardTitle className="text-lg">{generatedWebsite?.title || "Generated Website"}</CardTitle>
-              <CardDescription>
-                {generatedWebsite?.description}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex space-x-2">
-                <Button variant="outline" onClick={handlePreview}>
-                  <Eye className="w-4 h-4 mr-2" />
-                  Preview
-                </Button>
-                <Button onClick={handleDownload}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
-                </Button>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">{generatedWebsite?.title || "Generated Website"}</CardTitle>
+                  <CardDescription>
+                    {generatedWebsite?.description}
+                  </CardDescription>
+                </div>
+                <div className="flex space-x-2">
+                  <Button variant="outline" onClick={handlePreview}>
+                    <Eye className="w-4 h-4 mr-2" />
+                    Open in New Tab
+                  </Button>
+                  <Button onClick={handleDownload}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Download
+                  </Button>
+                </div>
               </div>
-            </CardContent>
+            </CardHeader>
           </Card>
 
-          {/* Website Code */}
+          {/* Website Preview & Code Tabs */}
           <Card className="border-0 shadow-soft">
-            <CardHeader>
-              <CardTitle className="text-lg">Generated Website Code</CardTitle>
+            <CardHeader className="pb-0">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="preview" className="flex items-center space-x-2">
+                    <Laptop className="w-4 h-4" />
+                    <span>Preview</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="code" className="flex items-center space-x-2">
+                    <Code className="w-4 h-4" />
+                    <span>Code</span>
+                  </TabsTrigger>
+                </TabsList>
+              
+                <TabsContent value="preview" className="mt-4 border rounded-md overflow-hidden">
+                  <div className="w-full bg-white">
+                    <iframe
+                      srcDoc={`
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                          <meta charset="UTF-8">
+                          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                          <title>${generatedWebsite?.title || "Generated Website"}</title>
+                          <style>
+                            ${generatedWebsite?.css || ""}
+                          </style>
+                        </head>
+                        <body>
+                          ${generatedWebsite?.html || "<div>No preview available yet</div>"}
+                        </body>
+                        </html>
+                      `}
+                      title="Website Preview"
+                      className="w-full h-[600px] border-0"
+                    />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="code" className="mt-4">
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">HTML Structure</h4>
+                      <div className="bg-muted rounded-lg p-4 max-h-96 overflow-y-auto">
+                        <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
+                          {generatedWebsite?.html || "No HTML generated yet"}
+                        </pre>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">CSS Styles</h4>
+                      <div className="bg-muted rounded-lg p-4 max-h-96 overflow-y-auto">
+                        <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
+                          {generatedWebsite?.css || "No CSS generated yet"}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardHeader>
-            <CardContent className="p-0">
-              <div className="p-6">
-                <h4 className="text-sm font-medium mb-2">HTML Structure</h4>
-                <div className="bg-muted rounded-lg p-4 max-h-96 overflow-y-auto">
-                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
-                    {generatedWebsite?.html || "No HTML generated yet"}
-                  </pre>
-                </div>
-              </div>
-              <div className="p-6">
-                <h4 className="text-sm font-medium mb-2">CSS Styles</h4>
-                <div className="bg-muted rounded-lg p-4 max-h-96 overflow-y-auto">
-                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
-                    {generatedWebsite?.css || "No CSS generated yet"}
-                  </pre>
-                </div>
-              </div>
-            </CardContent>
           </Card>
         </div>
       )}

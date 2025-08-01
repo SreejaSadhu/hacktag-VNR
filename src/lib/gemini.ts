@@ -125,17 +125,34 @@ Mission: Design a visually breathtaking, ultra-modern website for the following 
 💡 Design Directives
 Craft a next-gen website interface that embodies cutting-edge aesthetics and immersive interactivity:
 
-🌌 Futuristic UI: Glassmorphism + vibrant neon lighting
+🌌 FUTURISTIC UI ELEMENTS:
+- Glassmorphism with backdrop-filter blur effects
+- Vibrant gradients with subtle animations
+- Floating elements with subtle parallax effects
+- Neon accents and glow effects
+- Modern card designs with hover states
+- Clean, readable typography with proper hierarchy
 
-📱 Fully Responsive: Scales flawlessly across all devices
+📱 RESPONSIVE REQUIREMENTS:
+- Fully responsive design that works on all devices
+- Mobile-first approach with adaptive layouts
+- Touch-friendly interface elements
+- Proper spacing and sizing across viewports
 
-🌀 Elegant Animations: Smooth transitions, hover effects, and kinetic UI
+🧩 PAGE STRUCTURE:
+- Hero section with compelling headline and CTA
+- About/Features section highlighting key offerings
+- Testimonials or social proof section
+- Contact/CTA section with clear next steps
+- Modern navigation that's intuitive and accessible
+- Footer with essential links and information
 
-🌈 Gradient Dynamics: Layered backgrounds with floating UI components
-
-🧠 AI-Written Content: Professional, relevant, and context-aware (no lorem ipsum)
-
-🚫 No Placeholders: Every section must be complete, with real content
+🎯 CONTENT GUIDELINES:
+- Write real, professional content based on the business description
+- Include compelling headlines and persuasive copy
+- Focus on benefits and unique selling points
+- No lorem ipsum or placeholder text
+- Include realistic calls-to-action
 
 Return ONLY this JSON format:
 {
@@ -144,16 +161,15 @@ Return ONLY this JSON format:
   "title": "Business Name",
   "description": "A concise, compelling description of the site purpose and style"
 }
-
 `;
 
     console.log('🚀 Sending request to Gemini API...');
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-
+    
     console.log('📥 Raw API response received:', text.substring(0, 200) + '...');
-
+    
     // Try multiple approaches to extract JSON
     let jsonMatch = text.match(/\{[\s\S]*\}/);
     let parsedResponse;
@@ -217,7 +233,7 @@ Return ONLY this JSON format:
     console.log('📄 Description:', parsedResponse.description);
     console.log('🔧 HTML length:', parsedResponse.html.length);
     console.log('🎨 CSS length:', parsedResponse.css.length);
-
+    
     return {
       html: parsedResponse.html,
       css: parsedResponse.css,
@@ -613,4 +629,4 @@ function generateFuturisticFallbackWebsite(request: WebsiteGenerationRequest): W
     title: `${request.description.split(' ').slice(0, 3).join(' ')} - ${businessType}`,
     description: `A futuristic ${request.persona} website for your ${businessType.toLowerCase()} business`
   };
-}
+} 
