@@ -45,13 +45,23 @@ export default function GenerateWebsite() {
         persona: "professional" // Default to professional
       });
       
-      setGeneratedWebsite(result);
-      setHasGenerated(true);
-      setActiveTab("code");
-      toast({
-        title: "Website Generated!",
-        description: "Your website has been created successfully.",
-      });
+      // Check if the result contains an error message
+      if (result.title === 'API Key Error' || result.title === 'Generation Error' || result.title === 'Invalid Response' || result.title === 'Incomplete Response') {
+        setError(result.description);
+        toast({
+          title: "Generation Failed",
+          description: result.description,
+          variant: "destructive",
+        });
+      } else {
+        setGeneratedWebsite(result);
+        setHasGenerated(true);
+        setActiveTab("code");
+        toast({
+          title: "Website Generated!",
+          description: "Your website has been created successfully.",
+        });
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to generate website";
       setError(errorMessage);

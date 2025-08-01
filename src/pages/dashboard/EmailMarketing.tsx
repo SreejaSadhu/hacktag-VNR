@@ -6,16 +6,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AILoading } from "@/components/ui/LoadingSpinner";
+import { useToast } from "@/hooks/use-toast";
+import { generateEmail, EmailGenerationResponse } from "@/lib/gemini";
 import { 
   Mail, 
   Sparkles, 
-  Copy, 
   Send, 
   Calendar,
-  Eye,
-  RefreshCw,
-  Target,
-  TrendingUp
+  Target
 } from "lucide-react";
 
 export default function EmailMarketing() {
@@ -23,64 +21,127 @@ export default function EmailMarketing() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
   const [emailContent, setEmailContent] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailDescription, setEmailDescription] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [uploadedEmails, setUploadedEmails] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
 
   const handleGenerate = async () => {
     if (!goal.trim()) return;
     
     setIsGenerating(true);
-    // Simulate AI generation
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    setError(null);
     
-    // Mock generated email content
-    setEmailContent(`Subject: 🥐 Fresh Baked Goodness Awaits You at Sweet Dreams Bakery!
-
-Hi [First Name],
-
-Hope your week is off to a sweet start! ✨
-
-We've been busy in the kitchen creating something special just for you. This weekend, we're launching our new "Artisan Weekend Collection" featuring:
-
-🥖 Handcrafted sourdough with organic grains
-🧁 Seasonal fruit tarts made with local berries  
-🍞 Warm cinnamon swirl brioche (limited quantity!)
-
-As one of our valued community members, you get first access before we open to the public on Saturday.
-
-**Your Exclusive Early Bird Offer:**
-- 15% off any item from the new collection
-- Free coffee with any pastry purchase
-- Valid Friday 8am-12pm only
-
-The aroma alone will transport you to pastry heaven! Our baker Sarah has been perfecting these recipes for months, and we can't wait for you to taste the difference that passion and local ingredients make.
-
-Ready to treat yourself? 
-
-[CLAIM YOUR EARLY ACCESS OFFER]
-
-See you soon for some delicious moments!
-
-Warmly,
-The Sweet Dreams Team
-
-P.S. Follow us on Instagram @sweetdreamsbakery for behind-the-scenes baking magic! 
-
----
-Sweet Dreams Bakery | 123 Main Street | Portland, OR
-Unsubscribe | Update Preferences`);
-    
-    setIsGenerating(false);
-    setHasGenerated(true);
+    try {
+      const result = await generateEmail({
+        objective: goal.trim()
+      });
+      
+      // Check if the result contains an error message
+      if (result.subject.startsWith('❌')) {
+        setError(result.description);
+        toast({
+          title: "Generation Failed",
+          description: result.description,
+          variant: "destructive",
+        });
+      } else {
+        setEmailSubject(result.subject);
+        setEmailContent(result.content);
+        setEmailDescription(result.description);
+        setHasGenerated(true);
+        toast({
+          title: "Email Generated!",
+          description: "Your marketing email has been created successfully.",
+        });
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to generate email";
+      setError(errorMessage);
+      toast({
+        title: "Generation Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(emailContent);
+    const fullEmail = `Subject: ${emailSubject}\n\n${emailContent}`;
+    navigator.clipboard.writeText(fullEmail);
+    toast({
+      title: "Copied!",
+      description: "Email content copied to clipboard.",
+    });
   };
 
   const handleRegenerate = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-    }, 3000);
+    handleGenerate();
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    
+    // Check if it's an Excel file
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+      toast({
+        title: "Invalid File",
+        description: "Please upload an Excel file (.xlsx or .xls)",
+        variant: "destructive",
+      });
+      setIsUploading(false);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        // For now, we'll parse as CSV-like format
+        // In a real implementation, you'd use the xlsx library
+        const lines = text.split('\n');
+        const emails: string[] = [];
+        
+        lines.forEach(line => {
+          // Simple email extraction - look for email patterns
+          const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+          const matches = line.match(emailRegex);
+          if (matches) {
+            emails.push(...matches);
+          }
+        });
+
+        if (emails.length === 0) {
+          toast({
+            title: "No Emails Found",
+            description: "No valid email addresses found in the file",
+            variant: "destructive",
+          });
+        } else {
+          setUploadedEmails(emails);
+          toast({
+            title: "Emails Uploaded",
+            description: `Found ${emails.length} email addresses`,
+          });
+        }
+      } catch (error) {
+        toast({
+          title: "Upload Failed",
+          description: "Failed to read the file. Please try again.",
+          variant: "destructive",
+        });
+      }
+      setIsUploading(false);
+    };
+
+    reader.readAsText(file);
   };
 
   return (
@@ -94,9 +155,20 @@ Unsubscribe | Update Preferences`);
         </div>
         <h1 className="text-3xl font-bold">AI Email Marketing</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Generate compelling marketing emails that convert using advanced AI copywriting.
         </p>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <Card className="border-destructive bg-destructive/5">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2 text-destructive">
+              <Target className="w-4 h-4" />
+              <span className="text-sm">{error}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {!hasGenerated ? (
         /* Email Generation Form */
@@ -115,38 +187,16 @@ Unsubscribe | Update Preferences`);
               <Label htmlFor="marketingGoal">Campaign Objective</Label>
               <Textarea
                 id="marketingGoal"
-                placeholder="e.g., Promote our new weekend bakery collection, drive foot traffic this Friday with early bird access, increase weekend sales by 25%..."
                 value={goal}
                 onChange={(e) => setGoal(e.target.value)}
                 rows={4}
                 className="resize-none"
               />
               <p className="text-xs text-muted-foreground">
-                Be specific about your goals, target audience, and desired actions.
               </p>
             </div>
 
-            {/* Quick Goal Templates */}
-            <div className="space-y-3">
-              <Label>Quick Templates</Label>
-              <div className="grid md:grid-cols-2 gap-3">
-                {[
-                  "Promote new product launch with limited-time discount",
-                  "Re-engage inactive customers with special offer",
-                  "Drive traffic to weekend event or sale",
-                  "Build customer loyalty with exclusive member perks"
-                ].map((template, index) => (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    className="h-auto p-3 text-left justify-start"
-                    onClick={() => setGoal(template)}
-                  >
-                    <div className="text-sm">{template}</div>
-                  </Button>
-                ))}
-              </div>
-            </div>
+
 
             <Button 
               onClick={handleGenerate}
@@ -156,7 +206,7 @@ Unsubscribe | Update Preferences`);
             >
               {isGenerating ? (
                 <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Generating Email...
                 </>
               ) : (
@@ -171,38 +221,7 @@ Unsubscribe | Update Preferences`);
       ) : (
         /* Generated Email Preview */
         <div className="space-y-6">
-          {/* Email Header */}
-          <Card className="border-0 shadow-soft">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">Marketing Email Generated</h2>
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                    <Badge variant="secondary">Promotional</Badge>
-                    <span>Generated 2 minutes ago</span>
-                    <span className="flex items-center">
-                      <TrendingUp className="w-3 h-3 mr-1" />
-                      High conversion potential
-                    </span>
-                  </div>
-                </div>
-                <div className="flex space-x-2">
-                  <Button variant="outline" onClick={handleRegenerate} disabled={isGenerating}>
-                    <RefreshCw className={`w-4 h-4 mr-2 ${isGenerating ? 'animate-spin' : ''}`} />
-                    Regenerate
-                  </Button>
-                  <Button variant="outline" onClick={handleCopy}>
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copy
-                  </Button>
-                  <Button variant="outline">
-                    <Eye className="w-4 h-4 mr-2" />
-                    Preview
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+
 
           {/* Email Content */}
           <div className="grid lg:grid-cols-3 gap-6">
@@ -215,34 +234,79 @@ Unsubscribe | Update Preferences`);
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="bg-muted/30 rounded-lg p-6 font-mono text-sm">
-                    <pre className="whitespace-pre-wrap text-foreground">{emailContent}</pre>
+                  <div className="space-y-4">
+                    <div className="bg-muted/30 rounded-lg p-4">
+                      <div className="text-sm font-medium text-muted-foreground mb-2">Subject Line:</div>
+                      <div className="text-foreground font-medium">{emailSubject}</div>
+                    </div>
+                    <div className="bg-muted/30 rounded-lg p-6 font-mono text-sm">
+                      <pre className="whitespace-pre-wrap text-foreground">{emailContent}</pre>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Actions & Stats */}
+            {/* Actions */}
             <div className="space-y-4">
+
               <Card className="border-0 shadow-soft">
                 <CardHeader>
-                  <CardTitle className="text-lg">Performance Prediction</CardTitle>
+                  <CardTitle className="text-lg">Upload Email List</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                   <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Open Rate</span>
-                      <span className="font-medium text-success">28-35%</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Click Rate</span>
-                      <span className="font-medium text-primary">5-8%</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Conversion Rate</span>
-                      <span className="font-medium text-warning">2-4%</span>
-                    </div>
+                    <Label htmlFor="file-upload" className="text-sm font-medium">
+                      Upload your .xlsx file
+                    </Label>
+                    <input
+                      id="file-upload"
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => document.getElementById('file-upload')?.click()}
+                      disabled={isUploading}
+                    >
+                      {isUploading ? (
+                        <>
+                          <div className="w-4 h-4 mr-2 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="w-4 h-4 mr-2" />
+                          Choose File
+                        </>
+                      )}
+                    </Button>
                   </div>
+                  
+                  {uploadedEmails.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-muted-foreground">
+                        Found {uploadedEmails.length} emails
+                      </div>
+                      <div className="max-h-32 overflow-y-auto bg-muted/30 rounded-lg p-3">
+                        <div className="text-xs font-mono space-y-1">
+                          {uploadedEmails.slice(0, 10).map((email, index) => (
+                            <div key={index} className="text-muted-foreground">
+                              {email}
+                            </div>
+                          ))}
+                          {uploadedEmails.length > 10 && (
+                            <div className="text-muted-foreground">
+                              ... and {uploadedEmails.length - 10} more
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -259,26 +323,9 @@ Unsubscribe | Update Preferences`);
                     <Calendar className="w-4 h-4 mr-2" />
                     Schedule Campaign
                   </Button>
-                  <Button variant="outline" className="w-full">
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copy to Clipboard
-                  </Button>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-soft">
-                <CardHeader>
-                  <CardTitle className="text-lg">Tips</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="text-sm space-y-2 text-muted-foreground">
-                    <li>• Send between 10-11 AM for best open rates</li>
-                    <li>• Test subject lines with A/B testing</li>
-                    <li>• Include clear call-to-action buttons</li>
-                    <li>• Personalize with recipient names</li>
-                  </ul>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </div>

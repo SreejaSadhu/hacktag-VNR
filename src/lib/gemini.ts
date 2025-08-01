@@ -73,8 +73,35 @@ export interface WebsiteGenerationResponse {
   description: string;
 }
 
+export interface EmailGenerationRequest {
+  objective: string;
+  businessType?: string;
+  tone?: string;
+}
+
+export interface EmailGenerationResponse {
+  subject: string;
+  content: string;
+  description: string;
+}
+
 export async function generateWebsite(request: WebsiteGenerationRequest): Promise<WebsiteGenerationResponse> {
   try {
+    console.log('🔍 Starting website generation for:', request.description);
+    
+    // Check if API key is set
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error('❌ No Gemini API key found in environment variables');
+      return {
+        html: '<div style="padding: 20px; text-align: center;"><h2>❌ API Key Missing</h2><p>Please set VITE_GEMINI_API_KEY in your .env file</p></div>',
+        css: 'body { font-family: Arial, sans-serif; background: #f5f5f5; }',
+        title: 'API Key Error',
+        description: 'Gemini API key not configured'
+      };
+    }
+    
+    console.log('🔑 API key found, initializing Gemini...');
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Analyze business type from description
@@ -82,115 +109,266 @@ export async function generateWebsite(request: WebsiteGenerationRequest): Promis
     const colorScheme = getColorScheme(businessType, request.persona);
     const layoutStyle = getLayoutStyle(request.persona);
 
+    console.log('📊 Business Analysis:', { businessType, persona: request.persona, colorScheme });
+
     const prompt = `
-You are a cutting-edge web designer creating FUTURISTIC, VISUALLY STUNNING websites. Your mission is to generate websites that are both BEAUTIFUL and FULLY FUNCTIONAL with modern, futuristic design elements.
+🔮 SYSTEM PROMPT — Futuristic Website Generator
 
-🎨 VISUAL DESIGN REQUIREMENTS - CREATE STUNNING WEBSITES:
-- Use GLASSMORPHISM effects with backdrop-blur and transparency
-- Implement NEON GLOWS and LIGHTING effects
-- Create SMOOTH ANIMATIONS and MICRO-INTERACTIONS
-- Use GRADIENT BACKGROUNDS with multiple color stops
-- Add FLOATING ELEMENTS and PARALLAX effects
-- Include MODERN ICONS and VISUAL ELEMENTS
-- Use BOLD TYPOGRAPHY with proper hierarchy
-- Implement HOVER EFFECTS and TRANSITIONS
-- Add PARTICLE EFFECTS or ANIMATED BACKGROUNDS
-- Use SHADOWS and DEPTH for 3D effects
+Mission: Design a visually breathtaking, ultra-modern website for the following project:
 
-🔧 FUNCTIONAL REQUIREMENTS:
-- Create INTERACTIVE NAVIGATION with smooth scrolling
-- Add CONTACT FORMS with validation
-- Include CALL-TO-ACTION buttons with animations
-- Implement RESPONSIVE DESIGN for all devices
-- Add LOADING ANIMATIONS and TRANSITIONS
-- Include SOCIAL MEDIA LINKS and SHARING
-- Create SCROLL-TRIGGERED ANIMATIONS
-- Add MOBILE-FRIENDLY interactions
+🧠 Description: ${request.description}
+🏢 Business Type: ${businessType}
+🧬 Design Personality: ${request.persona}
+🎨 Color Palette: ${colorScheme}
+📐 Layout Style: ${layoutStyle}
 
-📋 BUSINESS CONTEXT:
-Business: "${request.description}"
-Type: ${businessType}
-Style: ${request.persona}
-Colors: ${colorScheme}
-Layout: ${layoutStyle}
+💡 Design Directives
+Craft a next-gen website interface that embodies cutting-edge aesthetics and immersive interactivity:
 
-🎯 WEBSITE STRUCTURE:
-1. HERO SECTION: Eye-catching header with animated background, floating elements, and call-to-action
-2. ABOUT SECTION: Company story with animated cards and hover effects
-3. SERVICES/PRODUCTS: Interactive grid with hover animations
-4. FEATURES: Highlight key offerings with icons and animations
-5. CONTACT SECTION: Functional contact form with validation
-6. FOOTER: Social links and additional information
+🌌 Futuristic UI: Glassmorphism + vibrant neon lighting
 
-✨ FUTURISTIC ELEMENTS:
-- Glassmorphism cards with backdrop-blur
-- Neon glow effects and lighting
-- Animated gradients and particles
-- Floating navigation and elements
-- Smooth scroll animations
-- Interactive hover states
-- Modern button designs with effects
-- Animated backgrounds
-- 3D transforms and perspectives
-- Micro-interactions throughout
+📱 Fully Responsive: Scales flawlessly across all devices
 
-🔮 ADVANCED FEATURES:
-- CSS Grid and Flexbox for perfect layouts
-- CSS Custom Properties for theming
-- Advanced animations with @keyframes
-- Responsive design with mobile-first approach
-- Accessibility features (ARIA labels, focus states)
-- Performance optimizations
-- Modern CSS features (clamp, aspect-ratio, etc.)
+🌀 Elegant Animations: Smooth transitions, hover effects, and kinetic UI
 
-Return ONLY a valid JSON object:
+🌈 Gradient Dynamics: Layered backgrounds with floating UI components
+
+🧠 AI-Written Content: Professional, relevant, and context-aware (no lorem ipsum)
+
+🚫 No Placeholders: Every section must be complete, with real content
+
+Return ONLY this JSON format:
 {
-  "html": "<futuristic HTML with glassmorphism, animations, and interactive elements>",
-  "css": "<stunning CSS with neon effects, glassmorphism, animations, and modern styling>",
-  "title": "Creative Business Name",
-  "description": "Futuristic website description"
+  "html": "<full futuristic HTML code here>",
+  "css": "<beautifully animated, responsive CSS here>",
+  "title": "Business Name",
+  "description": "A concise, compelling description of the site purpose and style"
 }
 
-Make this website VISUALLY STUNNING, FUTURISTIC, and FULLY FUNCTIONAL!
 `;
 
+    console.log('🚀 Sending request to Gemini API...');
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    
-    console.log('Raw API response:', text);
-    
-    // Try to extract JSON from the response
+
+    console.log('📥 Raw API response received:', text.substring(0, 200) + '...');
+
+    // Try multiple approaches to extract JSON
     let jsonMatch = text.match(/\{[\s\S]*\}/);
+    let parsedResponse;
+    
     if (!jsonMatch) {
-      throw new Error('Invalid response format from API');
+      console.error('❌ No JSON found in API response');
+      return {
+        html: '<div style="padding: 20px; text-align: center;"><h2>❌ Invalid Response</h2><p>API returned invalid format. Please try again.</p></div>',
+        css: 'body { font-family: Arial, sans-serif; background: #f5f5f5; }',
+        title: 'Generation Error',
+        description: 'Invalid response format from API'
+      };
     }
-    
-    const parsedResponse = JSON.parse(jsonMatch[0]);
-    
-    // Validate the response
+
+    try {
+      console.log('🔍 Extracted JSON from response');
+      parsedResponse = JSON.parse(jsonMatch[0]);
+    } catch (parseError) {
+      console.error('❌ JSON parsing failed:', parseError);
+      console.log('🔍 Raw JSON string:', jsonMatch[0]);
+      
+      // Try to clean the JSON string
+      let cleanedJson = jsonMatch[0];
+      
+      // Remove any text before the first {
+      cleanedJson = cleanedJson.substring(cleanedJson.indexOf('{'));
+      
+      // Remove any text after the last }
+      cleanedJson = cleanedJson.substring(0, cleanedJson.lastIndexOf('}') + 1);
+      
+      // Try to fix common JSON issues
+      cleanedJson = cleanedJson.replace(/,\s*}/g, '}'); // Remove trailing commas
+      cleanedJson = cleanedJson.replace(/,\s*]/g, ']'); // Remove trailing commas in arrays
+      
+      try {
+        parsedResponse = JSON.parse(cleanedJson);
+        console.log('✅ Successfully parsed cleaned JSON');
+      } catch (secondError) {
+        console.error('❌ Second JSON parsing attempt failed:', secondError);
+        return {
+          html: '<div style="padding: 20px; text-align: center;"><h2>❌ JSON Parse Error</h2><p>API returned malformed JSON. Please try again.</p><details><summary>Error Details</summary><pre>' + secondError.message + '</pre></details></div>',
+          css: 'body { font-family: Arial, sans-serif; background: #f5f5f5; } details { margin-top: 10px; } pre { background: #f0f0f0; padding: 10px; border-radius: 4px; font-size: 12px; }',
+          title: 'JSON Parse Error',
+          description: 'API returned malformed JSON: ' + secondError.message
+        };
+      }
+    }
+
     if (!parsedResponse.html || !parsedResponse.css || !parsedResponse.title) {
-      throw new Error('Incomplete response from API');
+      console.error('❌ Incomplete response from API:', parsedResponse);
+      return {
+        html: '<div style="padding: 20px; text-align: center;"><h2>❌ Incomplete Response</h2><p>API response missing required fields. Please try again.</p></div>',
+        css: 'body { font-family: Arial, sans-serif; background: #f5f5f5; }',
+        title: 'Generation Error',
+        description: 'Incomplete response from API'
+      };
     }
-    
+
+    console.log('✅ Successfully generated website with Gemini API');
+    console.log('📝 Title:', parsedResponse.title);
+    console.log('📄 Description:', parsedResponse.description);
+    console.log('🔧 HTML length:', parsedResponse.html.length);
+    console.log('🎨 CSS length:', parsedResponse.css.length);
+
     return {
       html: parsedResponse.html,
       css: parsedResponse.css,
       title: parsedResponse.title,
-      description: parsedResponse.description || "A futuristic website for your business"
+      description: parsedResponse.description || "A futuristic full-stack website for your business"
     };
-  } catch (error) {
-    console.error('Error generating website:', error);
+  } catch (error: any) {
+    console.error('❌ Error generating website with Gemini API:', error);
+    return {
+      html: `<div style="padding: 20px; text-align: center;"><h2>❌ Generation Failed</h2><p>Error: ${error.message}</p><p>Please check your API key and try again.</p></div>`,
+      css: 'body { font-family: Arial, sans-serif; background: #f5f5f5; }',
+      title: 'Generation Error',
+      description: `Failed to generate website: ${error.message}`
+    };
+  }
+}
+
+export async function generateEmail(request: EmailGenerationRequest): Promise<EmailGenerationResponse> {
+  try {
+    console.log('📧 Starting email generation for:', request.objective);
     
-    // If API fails, return a beautiful fallback website
-    return generateFuturisticFallbackWebsite(request);
+    // Check if API key is set
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error('❌ No Gemini API key found in environment variables');
+      return {
+        subject: '❌ API Key Missing',
+        content: 'Please set VITE_GEMINI_API_KEY in your .env file',
+        description: 'Gemini API key not configured'
+      };
+    }
+    
+    console.log('🔑 API key found, initializing Gemini...');
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    // Analyze business type from objective
+    const businessType = analyzeBusinessType(request.objective);
+    const tone = request.tone || 'professional';
+
+    console.log('📊 Email Analysis:', { businessType, tone });
+
+    const prompt = `
+Create a compelling marketing email for: "${request.objective}"
+
+Business Type: ${businessType}
+Tone: ${tone}
+
+REQUIREMENTS:
+- Engaging subject line that drives opens
+- Professional yet conversational tone
+- Clear call-to-action
+- Personalization elements ([First Name], etc.)
+- Compelling value proposition
+- Mobile-friendly formatting
+- Include unsubscribe and footer info
+- Use emojis strategically for visual appeal
+- Keep it concise but persuasive
+
+Return ONLY this JSON format:
+{
+  "subject": "Engaging subject line",
+  "content": "Complete email content with formatting",
+  "description": "Brief description of the email campaign"
+}
+`;
+
+    console.log('🚀 Sending email request to Gemini API...');
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    console.log('📥 Raw API response received:', text.substring(0, 200) + '...');
+
+    // Try multiple approaches to extract JSON
+    let jsonMatch = text.match(/\{[\s\S]*\}/);
+    let parsedResponse;
+    
+    if (!jsonMatch) {
+      console.error('❌ No JSON found in API response');
+      return {
+        subject: '❌ Invalid Response',
+        content: 'API returned invalid format. Please try again.',
+        description: 'Invalid response format from API'
+      };
+    }
+
+    try {
+      console.log('🔍 Extracted JSON from response');
+      parsedResponse = JSON.parse(jsonMatch[0]);
+    } catch (parseError) {
+      console.error('❌ JSON parsing failed:', parseError);
+      console.log('🔍 Raw JSON string:', jsonMatch[0]);
+      
+      // Try to clean the JSON string
+      let cleanedJson = jsonMatch[0];
+      
+      // Remove any text before the first {
+      cleanedJson = cleanedJson.substring(cleanedJson.indexOf('{'));
+      
+      // Remove any text after the last }
+      cleanedJson = cleanedJson.substring(0, cleanedJson.lastIndexOf('}') + 1);
+      
+      // Try to fix common JSON issues
+      cleanedJson = cleanedJson.replace(/,\s*}/g, '}'); // Remove trailing commas
+      cleanedJson = cleanedJson.replace(/,\s*]/g, ']'); // Remove trailing commas in arrays
+      
+      try {
+        parsedResponse = JSON.parse(cleanedJson);
+        console.log('✅ Successfully parsed cleaned JSON');
+      } catch (secondError) {
+        console.error('❌ Second JSON parsing attempt failed:', secondError);
+        return {
+          subject: '❌ JSON Parse Error',
+          content: 'API returned malformed JSON. Please try again.\n\nError Details: ' + secondError.message,
+          description: 'API returned malformed JSON: ' + secondError.message
+        };
+      }
+    }
+
+    if (!parsedResponse.subject || !parsedResponse.content) {
+      console.error('❌ Incomplete response from API:', parsedResponse);
+      return {
+        subject: '❌ Incomplete Response',
+        content: 'API response missing required fields. Please try again.',
+        description: 'Incomplete response from API'
+      };
+    }
+
+    console.log('✅ Successfully generated email with Gemini API');
+    console.log('📝 Subject:', parsedResponse.subject);
+    console.log('📄 Content length:', parsedResponse.content.length);
+
+    return {
+      subject: parsedResponse.subject,
+      content: parsedResponse.content,
+      description: parsedResponse.description || "Marketing email campaign"
+    };
+  } catch (error: any) {
+    console.error('❌ Error generating email with Gemini API:', error);
+    return {
+      subject: '❌ Generation Failed',
+      content: `Error: ${error.message}\n\nPlease check your API key and try again.`,
+      description: `Failed to generate email: ${error.message}`
+    };
   }
 }
 
 function analyzeBusinessType(description: string): string {
   const desc = description.toLowerCase();
   
-  if (desc.includes('bakery') || desc.includes('food') || desc.includes('restaurant') || desc.includes('cafe') || desc.includes('coffee')) {
+  if (desc.includes('bakery') || desc.includes('food') || desc.includes('restaurant') || desc.includes('cafe') || desc.includes('coffee') || desc.includes('vegan')) {
     return 'Food & Beverage';
   } else if (desc.includes('tech') || desc.includes('software') || desc.includes('app') || desc.includes('digital') || desc.includes('ai')) {
     return 'Technology';
@@ -204,7 +382,7 @@ function analyzeBusinessType(description: string): string {
     return 'Retail';
   } else if (desc.includes('education') || desc.includes('school') || desc.includes('training') || desc.includes('course') || desc.includes('learning')) {
     return 'Education';
-  } else if (desc.includes('art') || desc.includes('design') || desc.includes('creative') || desc.includes('studio')) {
+  } else if (desc.includes('art') || desc.includes('design') || desc.includes('creative') || desc.includes('studio') || desc.includes('photographer')) {
     return 'Creative & Arts';
   } else {
     return 'General Business';
@@ -271,6 +449,7 @@ function getLayoutStyle(persona: string): string {
   };
   
   return layouts[persona as keyof typeof layouts] || layouts.professional;
+<<<<<<< Updated upstream
 }
 
 function generateFuturisticFallbackWebsite(request: WebsiteGenerationRequest): WebsiteGenerationResponse {
@@ -436,3 +615,6 @@ function generateFuturisticFallbackWebsite(request: WebsiteGenerationRequest): W
     description: `A futuristic ${request.persona} website for your ${businessType.toLowerCase()} business`
   };
 } 
+=======
+} 
+>>>>>>> Stashed changes
