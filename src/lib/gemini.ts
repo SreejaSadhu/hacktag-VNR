@@ -346,6 +346,8 @@ Return ONLY this JSON format:
   "content": "Complete email content with formatting",
   "description": "Brief description of the email campaign"
 }
+  Strictly return only valid JSON. Do not include any explanations, markdown, or extra text.
+Do not include trailing commas or comments.
 `;
 
     console.log('🚀 Sending email request to Gemini API...');

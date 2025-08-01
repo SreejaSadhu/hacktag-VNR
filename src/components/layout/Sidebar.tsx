@@ -46,11 +46,6 @@ const navigationItems = [
     icon: Lightbulb,
   },
   {
-    title: "Real-Time Features",
-    href: "/dashboard/realtime",
-    icon: Zap,
-  },
-  {
     title: "Chatbot",
     href: "/dashboard/chatbot",
     icon: Bot,
