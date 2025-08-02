@@ -117,7 +117,7 @@ const Index = () => {
   };
 
   const handleStartFree = () => {
-    navigate('/onboarding');
+    navigate('/signup');
   };
 
   return (
