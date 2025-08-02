@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, X, Building2, Target, Palette } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 interface OnboardingData {
   businessName: string;
@@ -50,6 +50,8 @@ const brandTones = [
 export default function Onboarding() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     businessName: '',
     topOfferings: ['', '', ''],
@@ -59,7 +61,6 @@ export default function Onboarding() {
   });
   const [newOffering, setNewOffering] = useState('');
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const totalSteps = 3;
 
@@ -81,26 +82,128 @@ export default function Onboarding() {
 
   const handleSubmit = async () => {
     setIsLoading(true);
+    setError(null);
     
     try {
-      // Simulate API call to save onboarding data
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
       
-      // Store onboarding data in localStorage for demo
-      localStorage.setItem('onboardingData', JSON.stringify(onboardingData));
+      if (userError || !user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Map business types to industry categories
+      const getIndustryFromBusinessType = (businessType: string): string => {
+        const industryMap: { [key: string]: string } = {
+          'Café & Restaurant': 'food_beverage',
+          'Retail Store': 'retail',
+          'Design Agency': 'creative_services',
+          'Tech Startup': 'technology',
+          'Consulting': 'professional_services',
+          'Healthcare': 'healthcare',
+          'Fitness & Wellness': 'health_wellness',
+          'Education': 'education',
+          'Real Estate': 'real_estate',
+          'Beauty & Salon': 'beauty_personal_care',
+          'Other': 'other'
+        };
+        return industryMap[businessType] || 'other';
+      };
+
+      // Create business profile
+      const { data: businessProfile, error: businessError } = await supabase
+        .from('business_profiles')
+        .insert({
+          user_id: user.id,
+          business_name: onboardingData.businessName,
+          business_type: onboardingData.businessType.toLowerCase().replace(/\s+/g, '_'),
+          industry: getIndustryFromBusinessType(onboardingData.businessType),
+          business_description: `A ${onboardingData.businessType.toLowerCase()} business focused on ${onboardingData.userGoal.toLowerCase()}`,
+          target_audience: 'General customers',
+          business_goals: onboardingData.userGoal,
+          services_offered: onboardingData.topOfferings.filter(offering => offering.trim() !== ''),
+          contact_email: user.email,
+        })
+        .select()
+        .single();
+
+      if (businessError) {
+        console.error('Business profile error:', businessError);
+        throw new Error('Failed to create business profile');
+      }
+
+      // Update user profile with business information
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          company_name: onboardingData.businessName,
+          website: null, // Will be set when website is generated
+        })
+        .eq('id', user.id);
+
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+        // Don't throw error here as business profile was created successfully
+      }
+
+      // Create user settings with brand tone preference
+      const { error: settingsError } = await supabase
+        .from('user_settings')
+        .upsert({
+          user_id: user.id,
+          theme: 'light',
+          email_notifications: true,
+          push_notifications: true,
+          marketing_emails: true,
+          newsletter_subscription: true,
+          language: 'en',
+          timezone: 'UTC',
+          currency: 'USD',
+          date_format: 'MM/DD/YYYY',
+        });
+
+      if (settingsError) {
+        console.error('Settings error:', settingsError);
+        // Don't throw error here as business profile was created successfully
+      }
+
+      // Log user activity
+      const { error: activityError } = await supabase
+        .from('user_activity')
+        .insert({
+          user_id: user.id,
+          activity_type: 'onboarding_completed',
+          activity_data: {
+            business_name: onboardingData.businessName,
+            business_type: onboardingData.businessType,
+            user_goal: onboardingData.userGoal,
+            brand_tone: onboardingData.brandTone,
+            offerings_count: onboardingData.topOfferings.filter(offering => offering.trim() !== '').length
+          }
+        });
+
+      if (activityError) {
+        console.error('Activity log error:', activityError);
+        // Don't throw error here as business profile was created successfully
+      }
+
+      // Store onboarding data in localStorage for local access
+      localStorage.setItem('onboardingData', JSON.stringify({
+        ...onboardingData,
+        businessProfileId: businessProfile.id
+      }));
+
+      // Show success message and redirect to dashboard
+      setSuccess('Business profile created successfully! Redirecting to dashboard...');
       
-      toast({
-        title: "Onboarding Complete!",
-        description: "Your business profile has been saved successfully.",
-      });
+      // Navigate to dashboard after a short delay
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
       
-      navigate('/dashboard');
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save your business profile. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Onboarding error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to save your business profile. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -292,6 +395,17 @@ export default function Onboarding() {
         </CardHeader>
         
         <CardContent className="space-y-6">
+          {error && (
+            <div className="flex items-center space-x-2 text-destructive bg-destructive/5 p-3 rounded-lg">
+              <div className="text-sm">{error}</div>
+            </div>
+          )}
+          {success && (
+            <div className="flex items-center space-x-2 text-green-500 bg-green-50 p-3 rounded-lg">
+              <div className="text-sm">{success}</div>
+            </div>
+          )}
+          
           {renderCurrentStep()}
           
           <div className="flex justify-between pt-6">
