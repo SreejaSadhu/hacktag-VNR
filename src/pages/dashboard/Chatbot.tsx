@@ -18,6 +18,7 @@ import {
   Loader2
 } from "lucide-react";
 import { geminiService, ChatMessage } from "@/lib/gemini";
+import { getCurrentUser } from "@/lib/supabase";
 
 
 export default function Chatbot() {
@@ -68,6 +69,24 @@ export default function Chatbot() {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Load user context when component mounts
+  useEffect(() => {
+    const loadUserContext = async () => {
+      try {
+        const { user, error } = await getCurrentUser();
+        if (user && !error) {
+          console.log('🔄 Loading user context for chatbot...');
+          await geminiService.setUserContext(user.id);
+          console.log('✅ User context loaded successfully');
+        }
+      } catch (error) {
+        console.error('❌ Error loading user context:', error);
+      }
+    };
+
+    loadUserContext();
+  }, []);
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;

@@ -136,4 +136,74 @@ export const logUserActivity = async (activityData: any) => {
     .insert(activityData)
   
   return { data, error }
+}
+
+// Chatbot context functions
+export const getBusinessProfile = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('business_profiles')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
+  
+  return { data, error }
+}
+
+export const getUserContext = async (userId: string) => {
+  try {
+    // Get business profile
+    const { data: businessProfile, error: businessError } = await getBusinessProfile(userId)
+    
+    // Get user profile
+    const { data: userProfile, error: userError } = await getProfile(userId)
+    
+    // Get recent websites
+    const { data: websites, error: websitesError } = await supabase
+      .from('websites')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(5)
+    
+    // Get recent AI insights
+    const { data: insights, error: insightsError } = await supabase
+      .from('ai_insights')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(3)
+    
+    // Get recent email campaigns
+    const { data: emailCampaigns, error: emailError } = await supabase
+      .from('email_campaigns')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(3)
+    
+    return {
+      businessProfile: businessProfile || null,
+      userProfile: userProfile || null,
+      recentWebsites: websites || [],
+      recentInsights: insights || [],
+      recentEmailCampaigns: emailCampaigns || [],
+      errors: {
+        business: businessError,
+        user: userError,
+        websites: websitesError,
+        insights: insightsError,
+        email: emailError
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching user context:', error)
+    return {
+      businessProfile: null,
+      userProfile: null,
+      recentWebsites: [],
+      recentInsights: [],
+      recentEmailCampaigns: [],
+      errors: { general: error }
+    }
+  }
 } 

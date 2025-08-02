@@ -24,9 +24,6 @@ export default function GenerateWebsite() {
   
   // Image generation state
   const [imagePrompt, setImagePrompt] = useState("");
-  const [imageStyle, setImageStyle] = useState("realistic");
-  const [imageSize, setImageSize] = useState("1024x1024");
-  const [imageQuality, setImageQuality] = useState("standard");
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<ImageGenerationResponse[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -180,9 +177,9 @@ export default function GenerateWebsite() {
     try {
       const result = await generateImage({
         prompt: imagePrompt.trim(),
-        style: imageStyle,
-        size: imageSize as '1024x1024' | '1024x1792' | '1792x1024',
-        quality: imageQuality as 'standard' | 'hd'
+        style: "realistic", // Default to realistic
+        size: "1024x1024", // Default to 1024x1024
+        quality: "standard" // Default to standard
       });
 
       setGeneratedImages(prev => [result, ...prev]);
@@ -418,7 +415,7 @@ export default function GenerateWebsite() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Style</label>
-                  <Select value={imageStyle} onValueChange={setImageStyle}>
+                  <Select value="realistic" onValueChange={(value) => {}}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -439,7 +436,7 @@ export default function GenerateWebsite() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Size</label>
-                  <Select value={imageSize} onValueChange={setImageSize}>
+                  <Select value="1024x1024" onValueChange={(value) => {}}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -453,7 +450,7 @@ export default function GenerateWebsite() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Quality</label>
-                  <Select value={imageQuality} onValueChange={setImageQuality}>
+                  <Select value="standard" onValueChange={(value) => {}}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

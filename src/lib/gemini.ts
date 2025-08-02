@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getUserContext } from './supabase';
 
 // Initialize the Gemini API
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '');
@@ -11,10 +12,24 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
+export interface UserContext {
+  businessProfile: any;
+  userProfile: any;
+  recentWebsites: any[];
+  recentInsights: any[];
+  recentEmailCampaigns: any[];
+}
+
 export class GeminiService {
   private chat: any;
+  private userContext: UserContext | null = null;
+  private userId: string | null = null;
 
   constructor() {
+    this.initializeChat();
+  }
+
+  private initializeChat() {
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     this.chat = model.startChat({
       history: [
@@ -34,9 +49,119 @@ export class GeminiService {
     });
   }
 
+  // Method to set user context
+  async setUserContext(userId: string) {
+    this.userId = userId;
+    try {
+      const context = await getUserContext(userId);
+      this.userContext = context;
+      console.log('✅ User context loaded:', context);
+      
+      // Update chat with user context
+      if (context.businessProfile) {
+        await this.updateChatWithContext(context);
+      }
+    } catch (error) {
+      console.error('❌ Error loading user context:', error);
+    }
+  }
+
+  private async updateChatWithContext(context: UserContext) {
+    if (!context.businessProfile) return;
+
+    const contextPrompt = `
+IMPORTANT: You now have access to the user's business information. Use this context to provide more personalized and relevant advice.
+
+USER'S BUSINESS CONTEXT:
+- Business Name: ${context.businessProfile.business_name || 'Not specified'}
+- Business Type: ${context.businessProfile.business_type || 'Not specified'}
+- Industry: ${context.businessProfile.industry || 'Not specified'}
+- Brand Tone: ${context.businessProfile.brand_tone || 'professional'}
+- User Goal: ${context.businessProfile.user_goal || 'Not specified'}
+- Business Description: ${context.businessProfile.business_description || 'Not specified'}
+- Target Audience: ${context.businessProfile.target_audience || 'Not specified'}
+- Services Offered: ${context.businessProfile.services_offered?.join(', ') || 'Not specified'}
+
+RECENT ACTIVITY:
+- Recent Websites: ${context.recentWebsites.length} websites created
+- Recent AI Insights: ${context.recentInsights.length} insights generated
+- Recent Email Campaigns: ${context.recentEmailCampaigns.length} campaigns created
+
+Use this information to:
+1. Provide personalized advice based on their specific business type and industry
+2. Reference their recent activities when relevant
+3. Suggest improvements based on their brand tone and goals
+4. Offer specific recommendations for their target audience
+5. Consider their existing services and offerings
+
+Always maintain a professional, helpful tone while being conversational.
+`;
+
+    try {
+      await this.chat.sendMessage(contextPrompt);
+    } catch (error) {
+      console.error('Error updating chat with context:', error);
+    }
+  }
+
   async sendMessage(message: string): Promise<string> {
     try {
-      const result = await this.chat.sendMessage(message);
+      // Check if the message is business/marketing related
+      const businessKeywords = [
+        'business', 'marketing', 'website', 'copy', 'strategy', 'growth', 'sales', 'customer', 'product', 'service',
+        'brand', 'advertising', 'promotion', 'campaign', 'social media', 'content', 'seo', 'analytics', 'revenue',
+        'profit', 'market', 'industry', 'competitor', 'target audience', 'conversion', 'lead', 'client', 'company',
+        'startup', 'entrepreneur', 'business plan', 'pricing', 'positioning', 'value proposition', 'tagline',
+        'slogan', 'description', 'about us', 'contact', 'email', 'newsletter', 'blog', 'content marketing',
+        'digital marketing', 'traditional marketing', 'branding', 'logo', 'design', 'user experience', 'conversion rate',
+        'customer acquisition', 'retention', 'loyalty', 'feedback', 'review', 'testimonial', 'case study', 'roi',
+        'kpi', 'metrics', 'performance', 'optimization', 'improvement', 'development', 'launch', 'release',
+        'feature', 'benefit', 'advantage', 'unique selling proposition', 'competitive advantage', 'market research',
+        'survey', 'analysis', 'trend', 'opportunity', 'challenge', 'problem', 'solution', 'innovation', 'technology',
+        'automation', 'process', 'workflow', 'efficiency', 'productivity', 'quality', 'service', 'support',
+        'communication', 'presentation', 'pitch', 'proposal', 'quote', 'invoice', 'payment', 'billing', 'finance',
+        'budget', 'cost', 'investment', 'funding', 'capital', 'cash flow', 'expense', 'income', 'revenue stream',
+        'business model', 'revenue model', 'pricing strategy', 'distribution', 'supply chain', 'inventory',
+        'logistics', 'shipping', 'delivery', 'fulfillment', 'customer service', 'support', 'help', 'faq',
+        'knowledge base', 'documentation', 'training', 'onboarding', 'partnership', 'collaboration', 'alliance',
+        'joint venture', 'merger', 'acquisition', 'expansion', 'scaling', 'growth strategy', 'market expansion',
+        'international', 'global', 'local', 'regional', 'national', 'franchise', 'licensing', 'certification',
+        'compliance', 'regulation', 'legal', 'contract', 'agreement', 'terms', 'policy', 'procedure', 'guideline',
+        'best practice', 'industry standard', 'benchmark', 'comparison', 'evaluation', 'assessment', 'audit',
+        'review', 'report', 'dashboard', 'analytics', 'insights', 'data', 'statistics', 'metrics', 'measurement',
+        'tracking', 'monitoring', 'reporting', 'communication', 'messaging', 'storytelling', 'narrative', 'voice',
+        'tone', 'style', 'personality', 'character', 'identity', 'image', 'reputation', 'credibility', 'trust',
+        'authority', 'expertise', 'knowledge', 'skill', 'experience', 'qualification', 'certification', 'accreditation',
+        'recognition', 'award', 'achievement', 'success', 'milestone', 'goal', 'objective', 'target', 'aim',
+        'purpose', 'mission', 'vision', 'values', 'culture', 'team', 'staff', 'employee', 'personnel', 'human resources',
+        'recruitment', 'hiring', 'interview', 'candidate', 'applicant', 'resume', 'cv', 'portfolio', 'profile',
+        'background', 'experience', 'skill', 'talent', 'expertise', 'specialization', 'niche', 'focus', 'concentration',
+        'domain', 'field', 'sector', 'industry', 'market', 'segment', 'audience', 'demographic', 'psychographic',
+        'behavioral', 'geographic', 'location', 'area', 'region', 'territory', 'market', 'customer base', 'client base',
+        'user base', 'subscriber', 'member', 'follower', 'fan', 'advocate', 'ambassador', 'influencer', 'partner',
+        'affiliate', 'reseller', 'distributor', 'retailer', 'wholesaler', 'supplier', 'vendor', 'provider', 'service provider',
+        'consultant', 'advisor', 'mentor', 'coach', 'trainer', 'educator', 'instructor', 'teacher', 'professor',
+        'expert', 'specialist', 'professional', 'practitioner', 'consultant', 'advisor', 'counselor', 'therapist',
+        'counselor', 'mentor', 'coach', 'trainer', 'educator', 'instructor', 'teacher', 'professor', 'expert',
+        'specialist', 'professional', 'practitioner', 'consultant', 'advisor', 'counselor', 'therapist'
+      ];
+
+      const messageLower = message.toLowerCase();
+      const isBusinessRelated = businessKeywords.some(keyword => 
+        messageLower.includes(keyword.toLowerCase())
+      );
+
+      if (!isBusinessRelated) {
+        return "I apologize, but I'm specifically designed to help with business and marketing topics. I can assist you with:\n\n• Marketing strategies and campaigns\n• Website copy and content\n• Business growth ideas\n• Brand development\n• Customer acquisition\n• Social media marketing\n• Content creation\n• Business strategies\n\nPlease ask me something related to your business or marketing needs!";
+      }
+
+      // Add user context to the message if available
+      let enhancedMessage = message;
+      if (this.userContext && this.userContext.businessProfile) {
+        enhancedMessage = `[CONTEXT: ${this.userContext.businessProfile.business_name} - ${this.userContext.businessProfile.business_type} business in ${this.userContext.businessProfile.industry} industry. Brand tone: ${this.userContext.businessProfile.brand_tone}. Goal: ${this.userContext.businessProfile.user_goal}]\n\nUser question: ${message}`;
+      }
+
+      const result = await this.chat.sendMessage(enhancedMessage);
       const response = await result.response;
       return response.text();
     } catch (error) {
@@ -54,6 +179,11 @@ export class GeminiService {
         temperature: 0.7,
       },
     });
+    
+    // Re-apply user context if available
+    if (this.userContext && this.userContext.businessProfile) {
+      this.updateChatWithContext(this.userContext);
+    }
   }
 }
 
@@ -77,6 +207,7 @@ export interface EmailGenerationRequest {
   objective: string;
   businessType?: string;
   tone?: string;
+  emailType?: 'draft' | 'newsletter';
 }
 
 export interface EmailGenerationResponse {
@@ -126,8 +257,10 @@ export async function generateWebsite(request: WebsiteGenerationRequest): Promis
     const businessType = analyzeBusinessType(request.description);
     const colorScheme = getColorScheme(businessType, request.persona);
     const layoutStyle = getLayoutStyle(request.persona);
+    const relevantImages = getRelevantImages(businessType);
 
     console.log('📊 Business Analysis:', { businessType, persona: request.persona, colorScheme });
+    console.log('🖼️ Selected Images for', businessType, ':', relevantImages);
 
     const prompt = `
 🔮 SYSTEM PROMPT — Foolproof Website Generator
@@ -139,6 +272,7 @@ MISSION: Generate a beautiful, modern, and responsive website with full styling,
 🧬 Design Personality: ${request.persona}
 🎨 Color Scheme: ${colorScheme}  
 📐 Layout Style: ${layoutStyle}
+🖼️ Context-Relevant Images: ${relevantImages.join(', ')}
 
 -------------------------------------------
 ✅ ABSOLUTE STRUCTURE (MANDATORY SECTIONS)
@@ -146,11 +280,12 @@ MISSION: Generate a beautiful, modern, and responsive website with full styling,
 1. Hero Section:
 - Full screen or 80vh section
 - Large, bold heading, subheading & primary CTA button
-- Background must be a high-res image, gradient, or animation
+- Background must use one of the provided images: ${relevantImages[0]}
 - Include entrance animation (e.g. fadeIn, zoomIn)
 
 2. About Section:
 - Split layout: image left, text right
+- Use image: ${relevantImages[1]}
 - Subtle scroll animation
 - Professional tone
 
@@ -158,6 +293,7 @@ MISSION: Generate a beautiful, modern, and responsive website with full styling,
 - 3 to 6 modern cards with icons or images
 - Must have hover effects (lift, shadow, gradient glow)
 - Real feature names & benefit-oriented descriptions
+- Use image: ${relevantImages[2]} for one of the cards
 
 4. Testimonials Section:
 - At least 2–3 quotes or reviews with avatar or name
@@ -166,6 +302,7 @@ MISSION: Generate a beautiful, modern, and responsive website with full styling,
 
 5. Call to Action Section:
 - Bold message with image or pattern background
+- Use image: ${relevantImages[3]} as background
 - Vibrant CTA button
 - Clear user direction
 
@@ -179,8 +316,19 @@ MISSION: Generate a beautiful, modern, and responsive website with full styling,
 - All sections must have padding, consistent spacing, and modern font (e.g., Poppins, Inter)  
 - All interactive elements (cards, buttons) must have hover and transition effects  
 - Scroll-triggered animations (like AOS) must be used for all major sections  
-- Must include at least 3 high-resolution images (Unsplash or similar)  
+- Must include at least 3 high-resolution images from the provided list
 - Use icons for feature sections (Lucide, Heroicons, Font Awesome, etc.)
+
+-------------------------------------------
+🖼️ IMAGE REQUIREMENTS (CRITICAL)
+-------------------------------------------
+- Use ONLY these specific Unsplash image URLs: ${relevantImages.join(', ')}
+- Include actual image URLs, not placeholders
+- These images are specifically chosen for your business type: ${businessType}
+- Image URLs should be: https://images.unsplash.com/photo-[ID]?auto=format&fit=crop&w=800&q=80
+- Include alt text for accessibility
+- Images should be responsive and optimized
+- Use images contextually: hero background, about section, service cards, CTA background
 
 -------------------------------------------
 📱 RESPONSIVE DESIGN (MUST)
@@ -202,13 +350,15 @@ MISSION: Generate a beautiful, modern, and responsive website with full styling,
 Return only this JSON structure:
 
 {
-  "html": "<COMPLETE HTML with structured sections, proper classes and IDs>",
+  "html": "<COMPLETE HTML with structured sections, proper classes and IDs, and actual image URLs from the provided list>",
   "css": "<COMPLETE CSS with media queries, animations, and styling>",
   "title": "Business Name",
   "description": "Short, compelling summary of the brand and visual style"
 }
 
 ❌ IF ANY SECTION LOOKS PLAIN, IS MISSING STYLING, OR LACKS ANIMATION — REJECT AND REGENERATE. BASIC SITES ARE NOT ACCEPTABLE.
+❌ IF IMAGES ARE PLACEHOLDERS WITHOUT ACTUAL URLs — REJECT AND REGENERATE.
+❌ IF IMAGES ARE NOT FROM THE PROVIDED LIST — REJECT AND REGENERATE.
 `;
 
     console.log('🚀 Sending request to Gemini API...');
@@ -315,40 +465,78 @@ export async function generateEmail(request: EmailGenerationRequest): Promise<Em
     }
     
     console.log('🔑 API key found, initializing Gemini...');
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Analyze business type from objective
     const businessType = analyzeBusinessType(request.objective);
     const tone = request.tone || 'professional';
+    const emailType = request.emailType || 'draft';
 
-    console.log('📊 Email Analysis:', { businessType, tone });
+    console.log('📊 Email Analysis:', { businessType, tone, emailType });
 
-    const prompt = `
-Create a compelling marketing email for: "${request.objective}"
+    // Create different prompts based on email type
+    let prompt = '';
+    
+    if (emailType === 'draft') {
+      prompt = `
+Create a professional email draft for: "${request.objective}"
 
 Business Type: ${businessType}
 Tone: ${tone}
 
-REQUIREMENTS:
-- Engaging subject line that drives opens
-- Professional yet conversational tone
-- Clear call-to-action
-- Personalization elements ([First Name], etc.)
-- Compelling value proposition
-- Mobile-friendly formatting
-- Include unsubscribe and footer info
-- Use emojis strategically for visual appeal
-- Keep it concise but persuasive
+REQUIREMENTS FOR EMAIL DRAFT:
+- Professional and formal tone
+- Clear subject line
+- Structured content with proper greeting and closing
+- Include all necessary details and context
+- Professional signature format
+- Use proper email etiquette
+- Keep it concise but comprehensive
+- Include any relevant attachments or links mentioned
 
 Return ONLY this JSON format:
 {
-  "subject": "Engaging subject line",
-  "content": "Complete email content with formatting",
-  "description": "Brief description of the email campaign"
+  "subject": "Professional subject line",
+  "content": "Complete email draft with proper formatting",
+  "description": "Professional email draft"
 }
-  Strictly return only valid JSON. Do not include any explanations, markdown, or extra text.
-Do not include trailing commas or comments.
 `;
+    } else if (emailType === 'newsletter') {
+      prompt = `
+Create an engaging newsletter email content for: "${request.objective}"
+
+Business Type: ${businessType}
+Tone: ${tone}
+
+REQUIREMENTS FOR NEWSLETTER:
+- Create actual newsletter content, not HTML code
+- Engaging and informative content with clear sections
+- Include updates, tips, or valuable content for subscribers
+- Personal and conversational tone
+- Clear call-to-action
+- Professional but friendly approach
+- Use emojis strategically
+- Include social media links and contact information
+- Mobile-friendly content structure
+- Include unsubscribe option text
+- Make it feel like a real newsletter people would want to read
+
+Return ONLY this JSON format:
+{
+  "subject": "Engaging newsletter subject line",
+  "content": "Complete newsletter content with proper formatting and sections",
+  "description": "Engaging newsletter email"
+}
+
+The content should be the actual newsletter text, not HTML code. Include sections like:
+- Welcome message
+- Updates or news
+- Tips or valuable content
+- Call-to-action
+- Contact information
+- Unsubscribe notice
+`;
+    }
 
     console.log('🚀 Sending email request to Gemini API...');
     const result = await model.generateContent(prompt);
@@ -419,7 +607,7 @@ Do not include trailing commas or comments.
     return {
       subject: parsedResponse.subject,
       content: parsedResponse.content,
-      description: parsedResponse.description || "Marketing email campaign"
+      description: parsedResponse.description || `${emailType.charAt(0).toUpperCase() + emailType.slice(1)} email`
     };
   } catch (error: any) {
     console.error('❌ Error generating email with Gemini API:', error);
@@ -429,6 +617,19 @@ Do not include trailing commas or comments.
       description: `Failed to generate email: ${error.message}`
     };
   }
+}
+
+// --- AI Insights Types and Logic ---
+export interface InsightGenerationRequest {
+  businessDescription: string;
+}
+
+export interface InsightResponse {
+  competitors: string;
+  seo: string;
+  prosAndCons: string;
+  marketRelevance: string;
+  futureScore: string;
 }
 
 export async function generateInsights(request: InsightGenerationRequest): Promise<InsightResponse> {
@@ -566,25 +767,53 @@ Focus on general market insights, industry trends, and broad business advice. Ke
 function analyzeBusinessType(description: string): string {
   const desc = description.toLowerCase();
   
-  if (desc.includes('bakery') || desc.includes('food') || desc.includes('restaurant') || desc.includes('cafe') || desc.includes('coffee') || desc.includes('vegan')) {
-    return 'Food & Beverage';
-  } else if (desc.includes('tech') || desc.includes('software') || desc.includes('app') || desc.includes('digital') || desc.includes('ai')) {
-    return 'Technology';
-  } else if (desc.includes('fitness') || desc.includes('gym') || desc.includes('health') || desc.includes('wellness') || desc.includes('yoga')) {
-    return 'Health & Fitness';
-  } else if (desc.includes('beauty') || desc.includes('salon') || desc.includes('spa') || desc.includes('cosmetic') || desc.includes('hair')) {
-    return 'Beauty & Wellness';
-  } else if (desc.includes('consulting') || desc.includes('agency') || desc.includes('service') || desc.includes('business')) {
-    return 'Professional Services';
-  } else if (desc.includes('shop') || desc.includes('store') || desc.includes('retail') || desc.includes('boutique') || desc.includes('clothing')) {
-    return 'Retail';
-  } else if (desc.includes('education') || desc.includes('school') || desc.includes('training') || desc.includes('course') || desc.includes('learning')) {
-    return 'Education';
-  } else if (desc.includes('art') || desc.includes('design') || desc.includes('creative') || desc.includes('studio') || desc.includes('photographer')) {
-    return 'Creative & Arts';
-  } else {
-    return 'General Business';
+  // More comprehensive keyword matching
+  const businessTypes = {
+    'restaurant': ['restaurant', 'cafe', 'dining', 'food', 'cuisine', 'kitchen', 'chef', 'menu', 'dining', 'eatery', 'bistro', 'pub', 'bar', 'grill'],
+    'bakery': ['bakery', 'bread', 'pastry', 'cake', 'dessert', 'baking', 'confectionery', 'patisserie', 'sweets', 'cookies', 'muffins', 'croissant'],
+    'tech': ['technology', 'software', 'app', 'startup', 'digital', 'web', 'mobile', 'programming', 'coding', 'development', 'ai', 'artificial intelligence', 'machine learning', 'data', 'analytics', 'saas', 'platform'],
+    'fitness': ['fitness', 'gym', 'workout', 'exercise', 'training', 'health', 'wellness', 'yoga', 'pilates', 'crossfit', 'personal trainer', 'sports', 'athletic'],
+    'beauty': ['beauty', 'salon', 'spa', 'cosmetics', 'makeup', 'hair', 'skincare', 'aesthetic', 'beauty salon', 'nail', 'facial', 'massage', 'wellness'],
+    'consulting': ['consulting', 'consultant', 'business', 'strategy', 'management', 'advisory', 'professional services', 'corporate', 'enterprise', 'business solutions'],
+    'retail': ['retail', 'store', 'shop', 'ecommerce', 'online store', 'fashion', 'clothing', 'accessories', 'shopping', 'boutique', 'marketplace'],
+    'healthcare': ['healthcare', 'medical', 'doctor', 'clinic', 'hospital', 'pharmacy', 'dental', 'therapy', 'wellness', 'health', 'medicine', 'patient care'],
+    'education': ['education', 'school', 'university', 'college', 'learning', 'training', 'course', 'academy', 'institute', 'tutoring', 'online learning'],
+    'real_estate': ['real estate', 'property', 'realty', 'housing', 'home', 'apartment', 'condo', 'house', 'property management', 'real estate agent'],
+    'automotive': ['automotive', 'car', 'auto', 'vehicle', 'dealership', 'garage', 'repair', 'maintenance', 'tire', 'oil change', 'mechanic'],
+    'construction': ['construction', 'building', 'contractor', 'renovation', 'remodeling', 'architecture', 'engineering', 'construction company', 'home improvement'],
+    'legal': ['legal', 'law', 'attorney', 'lawyer', 'law firm', 'legal services', 'litigation', 'legal advice', 'court', 'justice'],
+    'financial': ['financial', 'finance', 'banking', 'investment', 'accounting', 'tax', 'insurance', 'wealth management', 'financial services', 'credit'],
+    'travel': ['travel', 'tourism', 'hotel', 'vacation', 'trip', 'booking', 'travel agency', 'tour', 'destination', 'adventure'],
+    'pet': ['pet', 'veterinary', 'animal', 'dog', 'cat', 'pet care', 'veterinarian', 'pet grooming', 'pet store', 'animal hospital'],
+    'home_services': ['cleaning', 'lawn care', 'landscaping', 'plumbing', 'electrical', 'hvac', 'home services', 'maintenance', 'repair services'],
+    'creative': ['design', 'creative', 'art', 'photography', 'graphic design', 'branding', 'marketing', 'advertising', 'media', 'content creation'],
+    'food_delivery': ['delivery', 'takeout', 'food delivery', 'meal prep', 'catering', 'food service', 'delivery service', 'meal delivery'],
+    'coffee': ['coffee', 'cafe', 'espresso', 'latte', 'coffee shop', 'barista', 'coffee roaster', 'specialty coffee']
+  };
+
+  // Count matches for each business type
+  const scores: { [key: string]: number } = {};
+  
+  for (const [type, keywords] of Object.entries(businessTypes)) {
+    scores[type] = keywords.filter(keyword => desc.includes(keyword)).length;
   }
+
+  // Find the business type with the highest score
+  const bestMatch = Object.entries(scores).reduce((a, b) => scores[a[0]] > scores[b[0]] ? a : b);
+  
+  // Only return a match if there's at least one keyword match
+  if (bestMatch[1] > 0) {
+    console.log(`🎯 Business type detected: ${bestMatch[0]} (score: ${bestMatch[1]})`);
+    return bestMatch[0];
+  }
+
+  // Fallback based on common words
+  if (desc.includes('honey') || desc.includes('bee') || desc.includes('apiary')) return 'food_delivery';
+  if (desc.includes('organic') || desc.includes('natural')) return 'food_delivery';
+  if (desc.includes('craft') || desc.includes('artisan')) return 'creative';
+  
+  console.log('🎯 No specific business type detected, using default');
+  return 'consulting';
 }
 
 function getColorScheme(businessType: string, persona: string): string {
@@ -640,13 +869,153 @@ function getColorScheme(businessType: string, persona: string): string {
 }
 
 function getLayoutStyle(persona: string): string {
-  const layouts = {
-    professional: 'Clean grid layout with structured sections, professional typography, subtle animations, card-based design',
-    playful: 'Dynamic layout with curved sections, bold typography, fun animations, interactive elements, gradient backgrounds',
-    minimal: 'Simple single-column layout with lots of whitespace, clean typography, subtle transitions, focus on content'
+  switch (persona.toLowerCase()) {
+    case 'modern':
+      return 'clean, minimalist, lots of white space, grid-based layout';
+    case 'creative':
+      return 'asymmetric, bold colors, overlapping elements, artistic';
+    case 'professional':
+      return 'structured, corporate, conservative colors, formal layout';
+    case 'friendly':
+      return 'warm colors, rounded corners, approachable, welcoming';
+    case 'luxury':
+      return 'elegant, premium, sophisticated, high-end aesthetics';
+    default:
+      return 'modern, clean, professional layout';
+  }
+}
+
+function getRelevantImages(businessType: string): string[] {
+  const imageMap: { [key: string]: string[] } = {
+    'restaurant': [
+      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=800&q=80'
+    ],
+    'bakery': [
+      'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=80'
+    ],
+    'tech': [
+      'https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?auto=format&fit=crop&w=800&q=80'
+    ],
+    'fitness': [
+      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=800&q=80'
+    ],
+    'beauty': [
+      'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=800&q=80'
+    ],
+    'consulting': [
+      'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&q=80'
+    ],
+    'retail': [
+      'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80'
+    ],
+    'healthcare': [
+      'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?auto=format&fit=crop&w=800&q=80'
+    ],
+    'education': [
+      'https://images.unsplash.com/photo-1523240798131-33771e4e0b2b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1523240798131-33771e4e0b2b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=800&q=80'
+    ],
+    'real_estate': [
+      'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80'
+    ],
+    'automotive': [
+      'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=800&q=80'
+    ],
+    'construction': [
+      'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=800&q=80'
+    ],
+    'legal': [
+      'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=800&q=80'
+    ],
+    'financial': [
+      'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=800&q=80'
+    ],
+    'travel': [
+      'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80'
+    ],
+    'pet': [
+      'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=800&q=80'
+    ],
+    'home_services': [
+      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80'
+    ],
+    'creative': [
+      'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=800&q=80'
+    ],
+    'food_delivery': [
+      'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?auto=format&fit=crop&w=800&q=80'
+    ],
+    'coffee': [
+      'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80'
+    ]
   };
-  
-  return layouts[persona as keyof typeof layouts] || layouts.professional;
+
+  // Return relevant images for the business type, or default images if not found
+  return imageMap[businessType] || [
+    'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&q=80'
+  ];
 }
 
 function generateFuturisticFallbackWebsite(request: WebsiteGenerationRequest): WebsiteGenerationResponse {

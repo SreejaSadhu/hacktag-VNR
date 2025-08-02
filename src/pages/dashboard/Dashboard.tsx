@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { getCurrentUser, getProfile } from "@/lib/supabase";
 
 import { 
   Globe, 
@@ -19,8 +21,35 @@ import {
 } from "lucide-react";
 
 export default function Dashboard() {
-
   const navigate = useNavigate();
+  const [userName, setUserName] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserName = async () => {
+      try {
+        const { user, error } = await getCurrentUser();
+        if (user && !error) {
+          const { data: profile, error: profileError } = await getProfile(user.id);
+          if (profile && !profileError) {
+            // Use first name if available, otherwise use full name or email
+            const name = profile.first_name || profile.full_name || user.email?.split('@')[0] || 'User';
+            setUserName(name);
+          } else {
+            // Fallback to email username if no profile
+            setUserName(user.email?.split('@')[0] || 'User');
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        setUserName('User');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserName();
+  }, []);
 
   const stats = [
     {
@@ -85,7 +114,13 @@ export default function Dashboard() {
       {/* Welcome Section */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Welcome back, John! 👋</h1>
+          <h1 className="text-3xl font-bold mb-2">
+            {isLoading ? (
+              "Welcome back! 👋"
+            ) : (
+              `Welcome back, ${userName}! 👋`
+            )}
+          </h1>
         
         </div>
         

@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AILoading } from "@/components/ui/LoadingSpinner";
 
 import { generateEmail, EmailGenerationResponse } from "@/lib/gemini";
@@ -18,6 +19,7 @@ import {
 
 export default function EmailMarketing() {
   const [goal, setGoal] = useState("");
+  const [emailType, setEmailType] = useState<'draft' | 'newsletter'>('draft');
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
   const [emailContent, setEmailContent] = useState("");
@@ -36,7 +38,8 @@ export default function EmailMarketing() {
     
     try {
       const result = await generateEmail({
-        objective: goal.trim()
+        objective: goal.trim(),
+        emailType: emailType
       });
       
       // Check if the result contains an error message
@@ -147,26 +150,48 @@ export default function EmailMarketing() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Target className="w-5 h-5 mr-2" />
-              Define Your Marketing Goal
+              Define Your {emailType === 'draft' ? 'Email Draft' : 'Newsletter'} Goal
             </CardTitle>
             <CardDescription>
-              Describe what you want to achieve with this email campaign.
+              Describe what you want to achieve with this {emailType === 'draft' ? 'email draft' : 'newsletter'}.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="marketingGoal">Campaign Objective</Label>
+              <Label htmlFor="marketingGoal">
+                {emailType === 'draft' ? 'Email Purpose' : 'Newsletter Content'}
+              </Label>
               <Textarea
                 id="marketingGoal"
                 value={goal}
                 onChange={(e) => setGoal(e.target.value)}
                 rows={4}
                 className="resize-none"
+                placeholder={
+                  emailType === 'draft' 
+                    ? "e.g., I need to send a professional email to a client about project updates and next steps..."
+                    : "e.g., I want to create a monthly newsletter for my bakery customers with recipes, tips, and special offers..."
+                }
               />
               <p className="text-xs text-muted-foreground">
               </p>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="emailType">Email Type</Label>
+              <Select value={emailType} onValueChange={(value: 'draft' | 'newsletter') => setEmailType(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">Email Draft</SelectItem>
+                  <SelectItem value="newsletter">Newsletter</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Choose the type of email you want to generate
+              </p>
+            </div>
 
 
             <Button 
@@ -178,12 +203,12 @@ export default function EmailMarketing() {
               {isGenerating ? (
                 <>
                   <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Generating Email...
+                  Generating {emailType === 'draft' ? 'Email Draft' : 'Newsletter'}...
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4 mr-2" />
-                  Generate Marketing Email
+                  Generate {emailType === 'draft' ? 'Email Draft' : 'Newsletter'}
                 </>
               )}
             </Button>
