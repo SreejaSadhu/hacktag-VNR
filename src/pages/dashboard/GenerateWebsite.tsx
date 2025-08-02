@@ -175,6 +175,25 @@ export default function GenerateWebsite() {
     setImageError(null);
 
     try {
+      // Map the selected size to the appropriate Gemini API size
+      const getGeminiSize = (selectedSize: string) => {
+        const sizeMap: Record<string, '1024x1024' | '1024x1792' | '1792x1024'> = {
+          '1024x1024': '1024x1024',
+          '1080x1080': '1024x1024',
+          '1080x1350': '1024x1792',
+          '1200x630': '1792x1024',
+          '1200x675': '1792x1024',
+          '1080x1920': '1024x1792',
+          '1500x500': '1792x1024',
+          '851x315': '1792x1024',
+          '1200x628': '1792x1024',
+          '1584x396': '1792x1024',
+          '1024x1792': '1024x1792',
+          '1792x1024': '1792x1024',
+        };
+        return sizeMap[selectedSize] || '1024x1024';
+      };
+
       const result = await generateImage({
         prompt: imagePrompt.trim(),
         style: "realistic", // Default to realistic
@@ -441,9 +460,19 @@ export default function GenerateWebsite() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1024x1024">Square (1024x1024)</SelectItem>
-                      <SelectItem value="1024x1792">Portrait (1024x1792)</SelectItem>
-                      <SelectItem value="1792x1024">Landscape (1792x1024)</SelectItem>
+                      <SelectItem value="1024x1024">Instagram Post (1:1)</SelectItem>
+                      <SelectItem value="1080x1080">Instagram Post HD (1:1)</SelectItem>
+                      <SelectItem value="1080x1350">Instagram Story (4:5)</SelectItem>
+                      <SelectItem value="1200x630">Facebook Post (1.91:1)</SelectItem>
+                      <SelectItem value="1200x675">Twitter Post (16:9)</SelectItem>
+                      <SelectItem value="1080x1920">Instagram Story Portrait (9:16)</SelectItem>
+                      <SelectItem value="1500x500">Twitter Banner (3:1)</SelectItem>
+                      <SelectItem value="851x315">Facebook Cover (2.7:1)</SelectItem>
+                      <SelectItem value="1200x628">LinkedIn Post (1.91:1)</SelectItem>
+                      <SelectItem value="1584x396">LinkedIn Banner (4:1)</SelectItem>
+                      <SelectItem value="1024x1792">Portrait (9:16)</SelectItem>
+                      <SelectItem value="1792x1024">Landscape (16:9)</SelectItem>
+                      <SelectItem value="1024x1024">Square (1:1)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

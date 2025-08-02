@@ -124,8 +124,8 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Bottom Section */}
-      {!collapsed && (
+      {/* Bottom Section - Remove upgrade to pro */}
+      {/* {!collapsed && (
         <div className="p-4 border-t">
           <div className="rounded-lg bg-gradient-secondary p-4 text-sm">
             <h4 className="font-medium mb-2">Upgrade to Pro</h4>
@@ -137,7 +137,7 @@ export function Sidebar() {
             </Button>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }
