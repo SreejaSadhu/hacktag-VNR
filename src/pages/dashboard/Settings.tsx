@@ -199,56 +199,6 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Upgrade Plan */}
-          <Card className="border-gradient-primary border-0 shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Crown className="w-5 h-5 mr-2 text-primary" />
-                Upgrade to Pro
-              </CardTitle>
-              <CardDescription>
-                Unlock unlimited websites and advanced features
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium mb-3">Free Plan</h4>
-                  <ul className="space-y-2 text-sm">
-                    {planFeatures.free.map((feature, index) => (
-                      <li key={index} className="flex items-center">
-                        <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full mr-2" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="relative">
-                  <div className="absolute -inset-1 bg-gradient-primary rounded-lg opacity-20" />
-                  <div className="relative bg-background rounded-lg p-4">
-                    <h4 className="font-medium mb-3 flex items-center">
-                      Pro Plan
-                      <Badge className="ml-2 bg-gradient-primary">Recommended</Badge>
-                    </h4>
-                    <ul className="space-y-2 text-sm mb-4">
-                      {planFeatures.pro.map((feature, index) => (
-                        <li key={index} className="flex items-center">
-                          <div className="w-1.5 h-1.5 bg-primary rounded-full mr-2" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="text-2xl font-bold mb-2">$19<span className="text-sm font-normal text-muted-foreground">/month</span></div>
-                    <Button className="w-full bg-gradient-primary hover:opacity-90">
-                      <Zap className="w-4 h-4 mr-2" />
-                      Upgrade Now
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* Notifications */}
