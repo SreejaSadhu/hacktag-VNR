@@ -34,6 +34,20 @@ export default function GenerateWebsite() {
 
   useEffect(() => {
     setWebsites(getStoredWebsites());
+    
+    // Load last generated website from localStorage
+    const lastGeneratedWebsite = localStorage.getItem('lastGeneratedWebsite');
+    if (lastGeneratedWebsite) {
+      try {
+        const parsed = JSON.parse(lastGeneratedWebsite);
+        setGeneratedWebsite(parsed);
+        setHasGeneratedWebsite(true);
+        setActiveTab("preview");
+      } catch (error) {
+        console.error('Error loading last generated website:', error);
+        localStorage.removeItem('lastGeneratedWebsite');
+      }
+    }
   }, []);
 
   const handleDelete = (id: string) => {
@@ -115,6 +129,8 @@ export default function GenerateWebsite() {
         setHasGeneratedWebsite(true);
         setActiveTab("preview");
 
+        // Save to localStorage for persistence
+        localStorage.setItem('lastGeneratedWebsite', JSON.stringify(result));
 
         // Save to localStorage
         saveWebsite({
@@ -165,8 +181,13 @@ export default function GenerateWebsite() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
 
-
+  const handleClearGeneratedWebsite = () => {
+    setGeneratedWebsite(null);
+    setHasGeneratedWebsite(false);
+    setWebsiteError(null);
+    localStorage.removeItem('lastGeneratedWebsite');
   };
 
   const handleGenerateImage = async () => {
@@ -337,6 +358,14 @@ export default function GenerateWebsite() {
                         <Download className="w-4 h-4 mr-2" />
                         Download
                       </Button>
+                      <Button variant="outline" onClick={handleClearGeneratedWebsite}>
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Clear
+                      </Button>
+                      <Button variant="outline" onClick={() => setHasGeneratedWebsite(false)}>
+                        <Wand2 className="w-4 h-4 mr-2" />
+                        Generate New
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -431,66 +460,6 @@ export default function GenerateWebsite() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Style</label>
-                  <Select value="realistic" onValueChange={(value) => {}}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="realistic">Realistic</SelectItem>
-                      <SelectItem value="artistic">Artistic</SelectItem>
-                      <SelectItem value="minimalist">Minimalist</SelectItem>
-                      <SelectItem value="vintage">Vintage</SelectItem>
-                      <SelectItem value="modern">Modern</SelectItem>
-                      <SelectItem value="cartoon">Cartoon</SelectItem>
-                      <SelectItem value="watercolor">Watercolor</SelectItem>
-                      <SelectItem value="digital-art">Digital Art</SelectItem>
-                      <SelectItem value="oil-painting">Oil Painting</SelectItem>
-                      <SelectItem value="sketch">Sketch</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Size</label>
-                  <Select value="1024x1024" onValueChange={(value) => {}}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1024x1024">Instagram Post (1:1)</SelectItem>
-                      <SelectItem value="1080x1080">Instagram Post HD (1:1)</SelectItem>
-                      <SelectItem value="1080x1350">Instagram Story (4:5)</SelectItem>
-                      <SelectItem value="1200x630">Facebook Post (1.91:1)</SelectItem>
-                      <SelectItem value="1200x675">Twitter Post (16:9)</SelectItem>
-                      <SelectItem value="1080x1920">Instagram Story Portrait (9:16)</SelectItem>
-                      <SelectItem value="1500x500">Twitter Banner (3:1)</SelectItem>
-                      <SelectItem value="851x315">Facebook Cover (2.7:1)</SelectItem>
-                      <SelectItem value="1200x628">LinkedIn Post (1.91:1)</SelectItem>
-                      <SelectItem value="1584x396">LinkedIn Banner (4:1)</SelectItem>
-                      <SelectItem value="1024x1792">Portrait (9:16)</SelectItem>
-                      <SelectItem value="1792x1024">Landscape (16:9)</SelectItem>
-                      <SelectItem value="1024x1024">Square (1:1)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Quality</label>
-                  <Select value="standard" onValueChange={(value) => {}}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="standard">Standard</SelectItem>
-                      <SelectItem value="hd">HD</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
               <Button
                 onClick={handleGenerateImage}
                 disabled={!imagePrompt.trim() || isGeneratingImage}
@@ -541,9 +510,6 @@ export default function GenerateWebsite() {
                       </div>
                       <div className="mt-2 space-y-1">
                         <p className="text-sm font-medium truncate">{image.prompt}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Style: {image.style} | Size: {image.size} | Quality: {image.quality}
-                        </p>
                       </div>
                     </div>
                   ))}

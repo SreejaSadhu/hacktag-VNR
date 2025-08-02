@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, Eye, EyeOff, AlertCircle, Mail } from "lucide-react";
-import { signIn, testConnection, supabase } from "@/lib/supabase";
+import { signIn, supabase } from "@/lib/supabase";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,18 +13,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
   const navigate = useNavigate();
-
-  const handleTestConnection = async () => {
-    setConnectionStatus("Testing connection...");
-    const result = await testConnection();
-    if (result.success) {
-      setConnectionStatus("✅ Connection successful!");
-    } else {
-      setConnectionStatus(`❌ Connection failed: ${result.error?.message || 'Unknown error'}`);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,10 +56,10 @@ export default function Login() {
 
         // If no business profile found, redirect to onboarding
         if (!businessProfile) {
-          navigate('/onboarding');
+          navigate('/onboarding', { replace: true });
         } else {
           // User has completed onboarding, redirect to dashboard
-          navigate('/dashboard');
+          navigate('/dashboard', { replace: true });
         }
       }
     } catch (err) {
@@ -95,22 +84,6 @@ export default function Login() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Test Connection Button */}
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={handleTestConnection}
-            className="w-full"
-          >
-            Test Supabase Connection
-          </Button>
-          {connectionStatus && (
-            <div className={`text-sm p-2 rounded ${
-              connectionStatus.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-            }`}>
-              {connectionStatus}
-            </div>
-          )}
           
           {error && (
             <div className="flex items-center space-x-2 text-destructive bg-destructive/5 p-3 rounded-lg">
@@ -178,9 +151,7 @@ export default function Login() {
               Sign up
             </Link>
           </div>
-          <div className="text-center text-xs text-muted-foreground">
-            <p>💡 If you just signed up, check your email for a confirmation link</p>
-          </div>
+
         </CardContent>
       </Card>
     </div>

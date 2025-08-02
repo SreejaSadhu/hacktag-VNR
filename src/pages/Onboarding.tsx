@@ -193,12 +193,15 @@ export default function Onboarding() {
         businessProfileId: businessProfile.id
       }));
 
+      // Mark onboarding as completed in localStorage
+      localStorage.setItem('onboardingCompleted', 'true');
+
       // Show success message and redirect to dashboard
       setSuccess('Business profile created successfully! Redirecting to dashboard...');
       
       // Navigate to dashboard after a short delay
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       }, 2000);
       
     } catch (error) {

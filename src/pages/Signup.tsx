@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Sparkles, Eye, EyeOff, AlertCircle, Mail } from "lucide-react";
-import { signUp } from "@/lib/supabase";
+import { signUp, supabase } from "@/lib/supabase";
 
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
@@ -18,7 +18,7 @@ export default function Signup() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,28 +49,26 @@ export default function Signup() {
       }
 
       if (data.user) {
-        // Check if email confirmation is required
-        if (data.user.email_confirmed_at === null) {
-          setShowEmailConfirmation(true);
-          setSuccess('Account created successfully! Please check your email to confirm your account before signing in.');
-        } else {
-          // Email already confirmed (if email confirmation is disabled)
-          setSuccess('Account created successfully! You can now sign in.');
-          
-          // Store user session
-          localStorage.setItem('user', JSON.stringify({
-            id: data.user.id,
-            email: data.user.email,
-            name: `${firstName} ${lastName}`,
-            firstName: firstName,
-            lastName: lastName
-          }));
+        // Store user session
+        localStorage.setItem('user', JSON.stringify({
+          id: data.user.id,
+          email: data.user.email,
+          name: `${firstName} ${lastName}`,
+          firstName: firstName,
+          lastName: lastName
+        }));
 
-          // Redirect to onboarding after a short delay
-          setTimeout(() => {
-            navigate('/onboarding');
-          }, 2000);
-        }
+        // Always redirect to onboarding after successful signup
+        setSuccess('Account created successfully! Redirecting to setup...');
+        
+        // Ensure user is properly signed in
+        const { data: sessionData } = await supabase.auth.getSession();
+        console.log('Session after signup:', sessionData);
+        
+        // Redirect to onboarding immediately
+        setTimeout(() => {
+          navigate('/onboarding', { replace: true });
+        }, 1500);
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
@@ -79,51 +77,7 @@ export default function Signup() {
     }
   };
 
-  if (showEmailConfirmation) {
-    return (
-      <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-large border-0">
-          <CardHeader className="text-center space-y-4">
-            <div className="flex justify-center">
-              <div className="w-16 h-16 rounded-xl bg-green-100 flex items-center justify-center">
-                <Mail className="w-8 h-8 text-green-600" />
-              </div>
-            </div>
-            <div>
-              <CardTitle className="text-2xl font-bold">Check Your Email</CardTitle>
-              <CardDescription>We've sent a confirmation link to {email}</CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-sm text-blue-800">
-                Please check your email and click the confirmation link to activate your account.
-              </p>
-            </div>
-            <div className="space-y-3">
-              <Button 
-                onClick={() => navigate('/login')}
-                className="w-full"
-                variant="outline"
-              >
-                Go to Login
-              </Button>
-              <Button 
-                onClick={() => setShowEmailConfirmation(false)}
-                className="w-full"
-                variant="ghost"
-              >
-                Back to Signup
-              </Button>
-            </div>
-            <div className="text-center text-xs text-muted-foreground">
-              <p>Didn't receive the email? Check your spam folder.</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+
 
   return (
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">

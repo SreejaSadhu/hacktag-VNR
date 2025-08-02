@@ -82,7 +82,7 @@ export default function FeedbackAnalyzer() {
   };
 
   const analyzeFeedback = async () => {
-    if (!feedback.trim() && uploadedFiles.length === 0) {
+    if (uploadedFiles.length === 0) {
 
       return;
     }
@@ -91,8 +91,8 @@ export default function FeedbackAnalyzer() {
     setHasAnalyzed(false);
 
     try {
-      // Combine feedback from text input and uploaded files
-      let allFeedback = feedback;
+      // Combine feedback from uploaded files
+      let allFeedback = '';
       
       for (const file of uploadedFiles) {
         try {
@@ -244,7 +244,7 @@ ${analysis.suggestions.map(category =>
       <div>
         <h1 className="text-3xl font-bold mb-2">Feedback Analyzer</h1>
         <p className="text-muted-foreground">
-          Upload or paste customer reviews to get AI-powered insights and actionable recommendations.
+          Upload customer review files to get AI-powered insights and actionable recommendations.
         </p>
       </div>
 
@@ -257,13 +257,11 @@ ${analysis.suggestions.map(category =>
                 <MessageSquare className="w-5 h-5 mr-2" />
                 Add Customer Feedback
               </CardTitle>
-              <CardDescription>
-                Upload files or paste reviews, testimonials, and feedback to analyze.
-              </CardDescription>
+              
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Upload Options */}
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-1 gap-4">
                 <Card 
                   className="border-dashed border-2 hover:border-primary/50 transition-colors cursor-pointer"
                   onClick={() => fileInputRef.current?.click()}
@@ -273,15 +271,6 @@ ${analysis.suggestions.map(category =>
                     <div className="font-medium mb-1">Upload Files</div>
                     <div className="text-sm text-muted-foreground">
                       CSV, TXT files supported
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="border-dashed border-2 hover:border-primary/50 transition-colors cursor-pointer">
-                  <CardContent className="p-6 text-center">
-                    <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-                    <div className="font-medium mb-1">Paste Text</div>
-                    <div className="text-sm text-muted-foreground">
-                      Copy and paste reviews directly
                     </div>
                   </CardContent>
                 </Card>
@@ -324,29 +313,11 @@ ${analysis.suggestions.map(category =>
                 </div>
               )}
 
-              {/* Text Input */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Customer Reviews</label>
-                <Textarea
-                  placeholder="Paste customer reviews, testimonials, or feedback here...
 
-Example:
-'The food was absolutely amazing! Fresh ingredients and great service. The wait was a bit long but totally worth it.'
-
-'Love the cozy atmosphere and friendly staff. The prices are a bit high but the quality justifies it.'"
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                  rows={8}
-                  className="resize-none"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {feedback.length} characters
-                </p>
-              </div>
 
               <Button 
                 onClick={analyzeFeedback}
-                disabled={(!feedback.trim() && uploadedFiles.length === 0) || isAnalyzing}
+                disabled={uploadedFiles.length === 0 || isAnalyzing}
                 className="w-full h-12 bg-gradient-primary hover:opacity-90"
                 size="lg"
               >
@@ -375,7 +346,7 @@ Example:
                 <div>
                   <h2 className="text-xl font-semibold mb-2">Analysis Complete</h2>
                   <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                    <span>{feedback.length + uploadedFiles.reduce((acc, file) => acc + file.size, 0)} characters analyzed</span>
+                    <span>{uploadedFiles.reduce((acc, file) => acc + file.size, 0)} characters analyzed</span>
                     <span>•</span>
                     <span>{analysis?.themes.length || 0} key themes identified</span>
                     <span>•</span>
@@ -392,7 +363,6 @@ Example:
                     onClick={() => {
                       setHasAnalyzed(false);
                       setAnalysis(null);
-                      setFeedback("");
                       setUploadedFiles([]);
                     }}
                   >

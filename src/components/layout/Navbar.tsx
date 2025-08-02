@@ -78,10 +78,7 @@ export function Navbar({ variant = "landing" }: NavbarProps) {
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-2 group">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-purple-500 to-teal-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-purple-500 to-teal-500 bg-clip-text text-transparent">
+          <span className="text-xl font-bold text-black">
             Boostly
           </span>
         </Link>

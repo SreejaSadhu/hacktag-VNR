@@ -263,102 +263,109 @@ export async function generateWebsite(request: WebsiteGenerationRequest): Promis
     console.log('🖼️ Selected Images for', businessType, ':', relevantImages);
 
     const prompt = `
-🔮 SYSTEM PROMPT — Foolproof Website Generator
+SYSTEM PROMPT — Foolproof Website Generator
 
-MISSION: Generate a beautiful, modern, and responsive website with full styling, structured layout, high-quality visuals, and engaging animations. NO plain designs. NO lorem ipsum. NO empty or unstyled sections.
+MISSION: Generate a stunning, modern, and responsive website with full styling, structured layout, high-quality visuals, and engaging animations. NO plain designs. NO lorem ipsum. NO empty or unstyled sections. This is a personalized, AI-generated site — NOT a generic template.
 
-🧠 Description: ${request.description}
-🏢 Business Type: ${businessType}
-🧬 Design Personality: ${request.persona}
-🎨 Color Scheme: ${colorScheme}  
-📐 Layout Style: ${layoutStyle}
-🖼️ Context-Relevant Images: ${relevantImages.join(', ')}
+🧠 BUSINESS CONTEXT (HIGH PRIORITY — MUST FOLLOW):
+You are building a website tailored specifically to a real business. The site must reflect the business type, audience, and visual identity. Do NOT create a generic layout or content. The tone, design, features, and visuals must directly relate to the nature of the business, such as a bakery, fitness studio, law firm, tech tool, clothing brand, or portfolio site.
+
+🎨 VISUAL & BRAND INPUTS:
+Use a consistent and modern design language. Choose a color scheme, layout style, and visual assets that match the business type. The site must look professional, vibrant, and engaging — with real images, icons, and call-to-action content.
 
 -------------------------------------------
 ✅ ABSOLUTE STRUCTURE (MANDATORY SECTIONS)
 -------------------------------------------
 1. Hero Section:
-- Full screen or 80vh section
-- Large, bold heading, subheading & primary CTA button
-- Background must use one of the provided images: ${relevantImages[0]}
-- Include entrance animation (e.g. fadeIn, zoomIn)
+- Full screen or 80vh height
+- Large, bold headline tailored to the business
+- Subheading with clear value proposition
+- Prominent call-to-action button like “Order Now”, “Book a Session”, or “Start Free Trial”
+- Use a relevant high-resolution background image
+- Include entrance animation (fadeIn, zoomIn, etc.)
 
 2. About Section:
-- Split layout: image left, text right
-- Use image: ${relevantImages[1]}
-- Subtle scroll animation
-- Professional tone
+- Split layout: image on the left, text on the right
+- Tell a brief story or describe the mission of the business
+- Subtle scroll-triggered animation
+- Professional tone matching the business
 
-3. Features/Services Grid:
-- 3 to 6 modern cards with icons or images
-- Must have hover effects (lift, shadow, gradient glow)
-- Real feature names & benefit-oriented descriptions
-- Use image: ${relevantImages[2]} for one of the cards
+3. Features / Services Section:
+- Display 3 to 6 service or feature cards
+- Each must include a real feature or offering — no fake services
+- Use icons or images in each card
+- Include hover effects (lift, shadow, glow)
+- Benefit-driven descriptions
 
-4. Testimonials Section:
-- At least 2–3 quotes or reviews with avatar or name
-- Smooth carousel or card layout
-- Subtle animations on load or scroll
+4. Testimonials:
+- At least 2 or 3 real-looking reviews with names and avatars
+- Smooth animated carousel or card-style layout
+- Scroll or load-in animations
 
 5. Call to Action Section:
-- Bold message with image or pattern background
-- Use image: ${relevantImages[3]} as background
-- Vibrant CTA button
-- Clear user direction
+- Bold message encouraging user action
+- Background must use a contextual image or pattern
+- Strong CTA button like “Get Started”, “Try Now”, “Contact Us”
 
 6. Footer:
-- Include logo, navigation links, social icons, and copyright
+- Include logo, navigation links, social icons, and copyright text
 
 -------------------------------------------
 🎨 DESIGN ENFORCEMENT (NO EXCEPTIONS)
 -------------------------------------------
-- Must use glassmorphism, gradient, or vibrant colors in at least 2 sections  
-- All sections must have padding, consistent spacing, and modern font (e.g., Poppins, Inter)  
-- All interactive elements (cards, buttons) must have hover and transition effects  
-- Scroll-triggered animations (like AOS) must be used for all major sections  
-- Must include at least 3 high-resolution images from the provided list
-- Use icons for feature sections (Lucide, Heroicons, Font Awesome, etc.)
+- Must use at least 2 sections with glassmorphism, gradient backgrounds, or vibrant color overlays
+- Responsive layout with modern font (e.g., Poppins, Inter, or similar)
+- All buttons and cards must have hover and transition effects
+- Use scroll-triggered animations (e.g., via AOS or similar)
+- Use icons from libraries like Lucide, Heroicons, or Font Awesome
+- Use at least 3 relevant high-resolution images (Unsplash, Pexels, etc.)
 
 -------------------------------------------
-🖼️ IMAGE REQUIREMENTS (CRITICAL)
+🖼 IMAGE RULES (STRICT)
 -------------------------------------------
-- Use ONLY these specific Unsplash image URLs: ${relevantImages.join(', ')}
-- Include actual image URLs, not placeholders
-- These images are specifically chosen for your business type: ${businessType}
-- Image URLs should be: https://images.unsplash.com/photo-[ID]?auto=format&fit=crop&w=800&q=80
-- Include alt text for accessibility
-- Images should be responsive and optimized
-- Use images contextually: hero background, about section, service cards, CTA background
+- Do NOT use placeholder or broken images
+- Use real, relevant Unsplash or Pexels URLs in this format:  
+  https://images.unsplash.com/photo-[ID]?auto=format&fit=crop&w=800&q=80
+- Images must reflect the business context (e.g., food for bakery, weights for gym)
+- Add descriptive alt text for accessibility
+- All images must be responsive and optimized
 
 -------------------------------------------
-📱 RESPONSIVE DESIGN (MUST)
+📱 RESPONSIVE DESIGN (MANDATORY)
 -------------------------------------------
-- Mobile-first layout  
-- Adaptive grids and stacking  
-- Touch-friendly buttons and spacing
+- Mobile-first layout
+- Sections must stack properly on smaller screens
+- Use touch-friendly spacing and sizing
 
 -------------------------------------------
-✍️ CONTENT GUIDELINES
+✍ CONTENT GUIDELINES
 -------------------------------------------
-- Use real, persuasive, benefit-driven content  
-- No placeholder or lorem ipsum text  
-- Use call-to-action words like "Explore Now", "Get Started", "Join the Future", etc.
+- No lorem ipsum or placeholders
+- Use clear, persuasive, and benefit-focused language
+- Avoid generic phrases like “We are the best”
+- Use real CTAs like “Join Now”, “Explore Menu”, “Book a Free Call”
 
 -------------------------------------------
-📦 OUTPUT FORMAT
+📦 OUTPUT FORMAT (STRICT)
 -------------------------------------------
-Return only this JSON structure:
+Return the result in the following JSON format:
 
 {
-  "html": "<COMPLETE HTML with structured sections, proper classes and IDs, and actual image URLs from the provided list>",
-  "css": "<COMPLETE CSS with media queries, animations, and styling>",
-  "title": "Business Name",
-  "description": "Short, compelling summary of the brand and visual style"
+  "html": "COMPLETE HTML as a string here with proper section structure, animation, images, and content.",
+  "css": "COMPLETE CSS as a string here with styling, media queries, animations, and transitions.",
+  "title": "Meaningful Business Title",
+  "description": "Short, engaging description of the business and visual design."
 }
 
-❌ IF ANY SECTION LOOKS PLAIN, IS MISSING STYLING, OR LACKS ANIMATION — REJECT AND REGENERATE. BASIC SITES ARE NOT ACCEPTABLE.
-❌ IF IMAGES ARE PLACEHOLDERS WITHOUT ACTUAL URLs — REJECT AND REGENERATE.
-❌ IF IMAGES ARE NOT FROM THE PROVIDED LIST — REJECT AND REGENERATE.
+-------------------------------------------
+🚫 REJECTION CONDITIONS
+-------------------------------------------
+- ❌ Any missing section → REJECT
+- ❌ Any generic layout or digital agency content for unrelated business types → REJECT
+- ❌ Any use of placeholder images or lorem ipsum → REJECT
+- ❌ Any unstyled or animation-less section → REJECT
+
+⚠ This is not a one-size-fits-all website. You are building a visually stunning, business-specific site with custom content and visuals. Every output must feel intentional and fully tailored to the business type.
 `;
 
     console.log('🚀 Sending request to Gemini API...');
@@ -535,6 +542,13 @@ The content should be the actual newsletter text, not HTML code. Include section
 - Call-to-action
 - Contact information
 - Unsubscribe notice
+
+Do not forget to make sure that it is in the correct JSON format.
+{
+  "subject": "Engaging newsletter subject line",
+  "content": "Complete newsletter content with proper formatting and sections",
+  "description": "Engaging newsletter email"
+}
 `;
     }
 
@@ -657,17 +671,17 @@ You are a friendly business consultant who gives practical, human advice. Based 
 
 Business: "${request.businessDescription}"
 
-Give me 5 general market insights in this exact JSON format:
+Give me 5 general market insights in this exact JSON format with exactly 2 strong bullet points for each section:
 
 {
-  "competitors": "• General competitive landscape in this industry\\n• Common business models and strategies\\n• Market positioning opportunities",
-  "seo": "• Popular search trends in this sector\\n• Content marketing opportunities\\n• Digital presence strategies",
-  "prosAndCons": "• Industry strengths and advantages\\n• Common challenges and risks\\n• Best practices for success",
-  "marketRelevance": "• Current market demand and trends\\n• Target audience insights\\n• Growth opportunities in the market",
-  "futureScore": "• Industry growth potential: X/10\\n• Emerging trends and opportunities\\n• Strategic recommendations for the future"
+  "competitors": "• [First strong bullet point about competitive landscape]\\n• [Second strong bullet point about market positioning]",
+  "seo": "• [First strong bullet point about search trends]\\n• [Second strong bullet point about digital strategies]",
+  "prosAndCons": "• [First strong bullet point about industry strengths]\\n• [Second strong bullet point about key challenges]",
+  "marketRelevance": "• [First strong bullet point about market demand]\\n• [Second strong bullet point about growth opportunities]",
+  "futureScore": "• [First strong bullet point about growth potential]\\n• [Second strong bullet point about strategic recommendations]"
 }
 
-Focus on general market insights, industry trends, and broad business advice. Keep it conversational, practical, and fun. Use bullet points, keep it short, and make it feel like advice from a friend who knows the market.
+IMPORTANT: Use exactly 2 bullet points (•) for each section, no more, no less. Make each bullet point strong, actionable, and specific to the business type. Keep it conversational, practical, and insightful.
 `;
 
     console.log('🚀 Sending insights request to Gemini API...');
@@ -1092,7 +1106,7 @@ function generateFuturisticFallbackWebsite(request: WebsiteGenerationRequest): W
       </footer>
     `,
     css: `
-      * {
+      html, body, div, header, main, section, p, h1, h2, h3, button {
         margin: 0;
         padding: 0;
         box-sizing: border-box;

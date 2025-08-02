@@ -6,58 +6,58 @@
 
 @layer base {
   :root {
-    /* Neura-inspired Soft Pastels */
-    --background: 0 0% 99%;
-    --foreground: 240 8% 20%;
+    /* Enhanced Light Mode with Higher Contrast and Saturation */
+    --background: 0 0% 98%;
+    --foreground: 240 10% 15%;
 
-    /* Cards with subtle elevation */
+    /* Cards with stronger contrast */
     --card: 0 0% 100%;
-    --card-foreground: 240 8% 20%;
+    --card-foreground: 240 10% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 8% 20%;
+    --popover-foreground: 240 10% 15%;
 
-    /* Primary - Soft Purple like Neura */
-    --primary: 270 50% 85%;
-    --primary-foreground: 270 20% 25%;
+    /* Primary - More Saturated Purple */
+    --primary: 270 60% 70%;
+    --primary-foreground: 270 20% 15%;
 
-    /* Secondary - Soft Mint Green */
-    --secondary: 140 40% 85%;
-    --secondary-foreground: 140 20% 25%;
+    /* Secondary - More Saturated Mint Green */
+    --secondary: 140 50% 75%;
+    --secondary-foreground: 140 20% 15%;
 
-    /* Muted with more warmth */
-    --muted: 240 8% 96%;
-    --muted-foreground: 240 6% 50%;
+    /* Muted with stronger contrast */
+    --muted: 240 10% 94%;
+    --muted-foreground: 240 8% 40%;
 
-    /* Accent - Soft Peach */
-    --accent: 20 60% 88%;
-    --accent-foreground: 20 30% 25%;
+    /* Accent - More Saturated Peach */
+    --accent: 20 70% 80%;
+    --accent-foreground: 20 30% 15%;
 
-    /* Soft status colors */
-    --success: 140 40% 80%;
-    --success-foreground: 140 30% 25%;
-    --warning: 35 70% 82%;
-    --warning-foreground: 35 40% 25%;
-    --destructive: 0 50% 75%;
-    --destructive-foreground: 0 30% 25%;
+    /* Enhanced status colors with higher saturation */
+    --success: 140 50% 70%;
+    --success-foreground: 140 30% 15%;
+    --warning: 35 80% 75%;
+    --warning-foreground: 35 40% 15%;
+    --destructive: 0 60% 70%;
+    --destructive-foreground: 0 30% 15%;
 
-    /* Subtle borders */
-    --border: 240 8% 92%;
-    --input: 240 8% 92%;
-    --ring: 270 50% 85%;
+    /* Stronger borders for better definition */
+    --border: 240 10% 88%;
+    --input: 240 10% 88%;
+    --ring: 270 60% 70%;
 
     /* Larger radius for Neura style */
     --radius: 1rem;
 
-    /* Sidebar */
-    --sidebar-background: 0 0% 99%;
-    --sidebar-foreground: 240 8% 20%;
-    --sidebar-primary: 270 50% 85%;
-    --sidebar-primary-foreground: 270 20% 25%;
-    --sidebar-accent: 240 8% 96%;
-    --sidebar-accent-foreground: 240 8% 20%;
-    --sidebar-border: 240 8% 92%;
-    --sidebar-ring: 270 50% 85%;
+    /* Sidebar with enhanced contrast */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 10% 15%;
+    --sidebar-primary: 270 60% 70%;
+    --sidebar-primary-foreground: 270 20% 15%;
+    --sidebar-accent: 240 10% 94%;
+    --sidebar-accent-foreground: 240 10% 15%;
+    --sidebar-border: 240 10% 88%;
+    --sidebar-ring: 270 60% 70%;
 
     /* Dark mode sidebar */
     --sidebar-background-dark: 0 0% 0%;
@@ -69,15 +69,15 @@
     --sidebar-border-dark: 240 3.7% 15.9%;
     --sidebar-ring-dark: 253 91% 75%;
 
-    /* Neura-style gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(270 50% 90%), hsl(140 40% 90%), hsl(20 60% 90%));
-    --gradient-secondary: linear-gradient(120deg, hsl(140 40% 88%), hsl(180 30% 88%));
-    --gradient-hero: linear-gradient(150deg, hsl(270 30% 97%), hsl(140 20% 97%), hsl(20 30% 97%));
+    /* Enhanced gradients with higher saturation */
+    --gradient-primary: linear-gradient(135deg, hsl(270 60% 80%), hsl(140 50% 80%), hsl(20 70% 80%));
+    --gradient-secondary: linear-gradient(120deg, hsl(140 50% 78%), hsl(180 40% 78%));
+    --gradient-hero: linear-gradient(150deg, hsl(270 40% 95%), hsl(140 30% 95%), hsl(20 40% 95%));
 
-    /* Softer shadows */
-    --shadow-soft: 0 2px 20px -8px hsl(270 50% 85% / 0.15);
-    --shadow-medium: 0 8px 40px -12px hsl(270 50% 85% / 0.2);
-    --shadow-large: 0 20px 60px -16px hsl(270 50% 85% / 0.25);
+    /* Stronger shadows for better depth */
+    --shadow-soft: 0 2px 20px -8px hsl(270 60% 70% / 0.25);
+    --shadow-medium: 0 8px 40px -12px hsl(270 60% 70% / 0.3);
+    --shadow-large: 0 20px 60px -16px hsl(270 60% 70% / 0.35);
   }
 
   .dark {

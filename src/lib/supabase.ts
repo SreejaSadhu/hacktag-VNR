@@ -206,4 +206,80 @@ export const getUserContext = async (userId: string) => {
       errors: { general: error }
     }
   }
-} 
+}
+
+// Analytics functions
+export const getAnalyticsData = async (userId: string, period: string = "30d") => {
+  try {
+    // Get user's websites
+    const { data: websites, error: websitesError } = await supabase
+      .from('websites')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+
+    if (websitesError) {
+      console.error('Error fetching websites:', websitesError)
+      return { data: null, error: websitesError }
+    }
+
+    // Get analytics events for the period
+    const periodDays = period === "7d" ? 7 : period === "30d" ? 30 : 90
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - periodDays)
+
+    const { data: analytics, error: analyticsError } = await supabase
+      .from('analytics')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('created_at', startDate.toISOString())
+      .order('created_at', { ascending: false })
+
+    if (analyticsError) {
+      console.error('Error fetching analytics:', analyticsError)
+      return { data: null, error: analyticsError }
+    }
+
+    // Get email campaigns
+    const { data: emailCampaigns, error: emailError } = await supabase
+      .from('email_campaigns')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('created_at', startDate.toISOString())
+      .order('created_at', { ascending: false })
+
+    if (emailError) {
+      console.error('Error fetching email campaigns:', emailError)
+    }
+
+    return {
+      data: {
+        websites: websites || [],
+        analytics: analytics || [],
+        emailCampaigns: emailCampaigns || []
+      },
+      error: null
+    }
+  } catch (error) {
+    console.error('Error fetching analytics data:', error)
+    return { data: null, error }
+  }
+}
+
+export const logAnalyticsEvent = async (eventData: {
+  user_id: string
+  website_id?: string
+  event_type: string
+  event_data?: any
+  session_id?: string
+  page_url?: string
+  referrer?: string
+  user_agent?: string
+  ip_address?: string
+}) => {
+  const { data, error } = await supabase
+    .from('analytics')
+    .insert(eventData)
+  
+  return { data, error }
+}

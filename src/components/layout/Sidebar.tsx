@@ -31,11 +31,6 @@ const navigationItems = [
     icon: Sparkles,
   },
   {
-    title: "Influencer Match",
-    href: "/dashboard/influencer",
-    icon: Users,
-  },
-  {
     title: "Email Marketing",
     href: "/dashboard/email",
     icon: Mail,
@@ -59,6 +54,11 @@ const navigationItems = [
     title: "Analytics",
     href: "/dashboard/analytics",
     icon: BarChart3,
+  },
+  {
+    title: "Influencer Match",
+    href: "/dashboard/influencer",
+    icon: Users,
   },
   {
     title: "Community",

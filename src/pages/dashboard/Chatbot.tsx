@@ -10,11 +10,7 @@ import {
   Send, 
   User, 
   Clock,
-  Bookmark,
-  Plus,
   Sparkles,
-  MessageSquare,
-  Zap,
   Loader2
 } from "lucide-react";
 import { geminiService, ChatMessage } from "@/lib/gemini";
@@ -34,13 +30,7 @@ export default function Chatbot() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  const savedPrompts = [
-    "Suggest a tagline for my bakery",
-    "Write product descriptions for my online store",
-    "Create social media captions for my restaurant",
-    "Generate blog post ideas for my business",
-    "Help me write an About Us page"
-  ];
+
 
   const chatHistory = [
     {
@@ -88,6 +78,27 @@ export default function Chatbot() {
     loadUserContext();
   }, []);
 
+  // Function to clean up AI responses for better readability
+  const cleanAIResponse = (response: string): string => {
+    return response
+      // Remove excessive asterisks and formatting
+      .replace(/\*{3,}/g, '') // Remove 3+ consecutive asterisks
+      .replace(/\*{2}/g, '') // Remove double asterisks
+      .replace(/^\*+|\*+$/gm, '') // Remove asterisks at start/end of lines
+      .replace(/^\s*[-•]\s*\*/gm, '• ') // Convert asterisk bullets to clean bullets
+      .replace(/^\s*\*\s*/gm, '• ') // Convert single asterisk bullets to clean bullets
+      // Clean up excessive whitespace
+      .replace(/\n{3,}/g, '\n\n') // Remove excessive line breaks
+      .replace(/[ \t]+/g, ' ') // Normalize spaces
+      // Clean up common formatting issues
+      .replace(/```\w*\n?/g, '') // Remove code block markers
+      .replace(/`([^`]+)`/g, '$1') // Remove inline code formatting
+      .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold formatting
+      .replace(/\*([^*]+)\*/g, '$1') // Remove italic formatting
+      // Clean up the response
+      .trim();
+  };
+
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
 
@@ -106,10 +117,13 @@ export default function Chatbot() {
       // Get AI response from Gemini
       const aiResponse = await geminiService.sendMessage(inputMessage);
       
+      // Clean up the response for better readability
+      const cleanedResponse = cleanAIResponse(aiResponse);
+      
       const botMessage: ChatMessage = {
         id: messages.length + 2,
         type: "bot",
-        content: aiResponse,
+        content: cleanedResponse,
         timestamp: new Date()
       };
 
@@ -131,59 +145,12 @@ export default function Chatbot() {
     }
   };
 
-  const handleNewChat = () => {
-    geminiService.startNewChat();
-    setMessages([
-      {
-        id: 1,
-        type: "bot",
-        content: "Hello! I'm your AI business assistant powered by Gemini. I can help you with website copy, marketing ideas, business strategies, and more. What would you like to work on today?",
-        timestamp: new Date()
-      }
-    ]);
 
-  };
-
-  const handlePromptClick = (prompt: string) => {
-    setInputMessage(prompt);
-  };
 
   return (
     <div className="h-[calc(100vh-8rem)] grid lg:grid-cols-4 gap-6">
       {/* Sidebar */}
       <div className="lg:col-span-1 space-y-4">
-        {/* New Chat */}
-        <Button 
-          className="w-full bg-gradient-primary hover:opacity-90"
-          onClick={handleNewChat}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          New Chat
-        </Button>
-
-        {/* Saved Prompts */}
-        <Card className="border-0 shadow-soft">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center">
-              <Bookmark className="w-4 h-4 mr-2" />
-              Quick Prompts
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {savedPrompts.map((prompt, index) => (
-              <Button
-                key={index}
-                variant="ghost"
-                className="w-full h-auto p-2 text-left justify-start text-sm"
-                onClick={() => handlePromptClick(prompt)}
-              >
-                <Zap className="w-3 h-3 mr-2 text-primary" />
-                {prompt}
-              </Button>
-            ))}
-          </CardContent>
-        </Card>
-
         {/* Chat History */}
         <Card className="border-0 shadow-soft">
           <CardHeader className="pb-3">
@@ -256,8 +223,8 @@ export default function Chatbot() {
                         : "bg-muted"
                     }`}
                   >
-                    <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-                    <div className="text-xs opacity-70 mt-1">
+                    <div className="text-sm whitespace-pre-wrap leading-relaxed font-sans">{message.content}</div>
+                    <div className="text-xs opacity-70 mt-2">
                       {message.timestamp.toLocaleTimeString([], { 
                         hour: '2-digit', 
                         minute: '2-digit' 
@@ -309,10 +276,7 @@ export default function Chatbot() {
                 )}
               </Button>
             </div>
-            <div className="flex items-center space-x-2 mt-2 text-xs text-muted-foreground">
-              <Sparkles className="w-3 h-3" />
-              <span>Powered by Gemini AI • Always here to help your business grow</span>
-            </div>
+            
           </div>
         </Card>
       </div>

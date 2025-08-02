@@ -94,15 +94,7 @@ export default function AIInsights() {
         {!insights ? (
           /* Input Form */
           <Card className="border-0 shadow-soft max-w-4xl mx-auto">
-            <CardHeader>
-              <CardTitle className="flex items-center text-2xl">
-                <Lightbulb className="w-6 h-6 mr-3 text-primary" />
-                Describe Your Business
-              </CardTitle>
-              <CardDescription>
-                Provide details about your business, industry, and goals to generate comprehensive insights
-              </CardDescription>
-            </CardHeader>
+            
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="businessPrompt" className="text-lg font-medium">
@@ -114,11 +106,9 @@ export default function AIInsights() {
                   onChange={(e) => setBusinessPrompt(e.target.value)}
                   rows={6}
                   className="resize-none text-lg"
-                  placeholder="Describe your business, industry, target market, products/services, and what insights you're looking for..."
+                  
                 />
-                <p className="text-xs text-muted-foreground">
-                  Be specific about your business model, market, and challenges for better insights
-                </p>
+                
               </div>
 
               <Button 
@@ -177,7 +167,7 @@ export default function AIInsights() {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="bg-muted/30 rounded-lg p-4">
-                      <pre className="whitespace-pre-wrap text-sm text-foreground">{insights.competitors}</pre>
+                      <div className="whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed">{insights.competitors}</div>
                     </div>
                     <Button 
                       variant="ghost" 
@@ -206,7 +196,7 @@ export default function AIInsights() {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="bg-muted/30 rounded-lg p-4">
-                      <pre className="whitespace-pre-wrap text-sm text-foreground">{insights.seo}</pre>
+                      <div className="whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed">{insights.seo}</div>
                     </div>
                     <Button 
                       variant="ghost" 
@@ -235,7 +225,7 @@ export default function AIInsights() {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="bg-muted/30 rounded-lg p-4">
-                      <pre className="whitespace-pre-wrap text-sm text-foreground">{insights.prosAndCons}</pre>
+                      <div className="whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed">{insights.prosAndCons}</div>
                     </div>
                     <Button 
                       variant="ghost" 
@@ -264,7 +254,7 @@ export default function AIInsights() {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="bg-muted/30 rounded-lg p-4">
-                      <pre className="whitespace-pre-wrap text-sm text-foreground">{insights.marketRelevance}</pre>
+                      <div className="whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed">{insights.marketRelevance}</div>
                     </div>
                     <Button 
                       variant="ghost" 
@@ -293,7 +283,7 @@ export default function AIInsights() {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="bg-muted/30 rounded-lg p-4">
-                      <pre className="whitespace-pre-wrap text-sm text-foreground">{insights.futureScore}</pre>
+                      <div className="whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed">{insights.futureScore}</div>
                     </div>
                     <Button 
                       variant="ghost" 

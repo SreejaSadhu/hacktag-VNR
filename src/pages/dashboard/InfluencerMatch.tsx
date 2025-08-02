@@ -183,7 +183,7 @@ export default function InfluencerMatch() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-2 border-gray-300">
           <TabsTrigger value="brand">Brand Matching</TabsTrigger>
           <TabsTrigger value="influencer">Influencer Enrollment</TabsTrigger>
         </TabsList>
@@ -192,8 +192,8 @@ export default function InfluencerMatch() {
         <TabsContent value="brand" className="space-y-6">
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Brand Form */}
-            <Card className="lg:col-span-1 border-0 shadow-soft">
-              <CardHeader>
+            <Card className="lg:col-span-1 border-0 shadow-soft border-gray-300">
+              <CardHeader className="border-b border-gray-300 pb-4">
                 <CardTitle className="flex items-center">
                   <Users className="w-5 h-5 mr-2" />
                   Description
@@ -208,7 +208,7 @@ export default function InfluencerMatch() {
                     id="campaignGoals"
                     value={brandForm.campaignGoals}
                     onChange={handleBrandFormChange}
-
+                    className="border-gray-300"
                     placeholder="e.g., Increase brand awareness for our new bakery, reach food enthusiasts in local area..."
                     rows={3}
                   />
@@ -219,7 +219,7 @@ export default function InfluencerMatch() {
                     id="targetAudience"
                     value={brandForm.targetAudience}
                     onChange={handleBrandFormChange}
-
+                    className="border-gray-300"
                     placeholder="e.g., Food lovers, 25-45, health-conscious"
                   />
                 </div>
@@ -229,7 +229,7 @@ export default function InfluencerMatch() {
                     id="brandTone"
                     value={brandForm.brandTone}
                     onChange={handleBrandFormChange}
-
+                    className="border-gray-300"
                     placeholder="e.g., Warm, authentic, community-focused"
                   />
                 </div>
@@ -237,9 +237,9 @@ export default function InfluencerMatch() {
                   <Label htmlFor="budget">Budget Range</Label>
                   <Input
                     id="budget"
-
                     value={brandForm.budget}
                     onChange={handleBrandFormChange}
+                    className="border-gray-300"
                     placeholder="e.g., $500-1000 per post"
                   />
                 </div>
@@ -251,7 +251,7 @@ export default function InfluencerMatch() {
                   {loading ? "Finding..." : "Find Matches"}
                 </Button>
                 <Button
-                  className="w-full mt-2"
+                  className="w-full mt-2 border-gray-300"
                   variant="outline"
                   onClick={fetchAllInfluencers}
                   disabled={loading}
@@ -269,7 +269,7 @@ export default function InfluencerMatch() {
                   {influencerResults.length} Perfect Matches Found
                 </h3>
 
-                <Button variant="outline" size="sm" disabled>
+                <Button variant="outline" size="sm" disabled className="border-gray-300">
                   Filter Results
                 </Button>
               </div>
@@ -277,7 +277,7 @@ export default function InfluencerMatch() {
               {error && <p className="text-destructive">{error}</p>}
 
               {influencerResults.map((influencer) => (
-                <Card key={influencer.id} className="border-0 shadow-soft hover-lift">
+                <Card key={influencer.id} className="border-0 shadow-soft hover-lift border-gray-300">
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4">
                       <Avatar className="w-16 h-16">
@@ -303,7 +303,7 @@ export default function InfluencerMatch() {
                                 <MapPin className="w-3 h-3 mr-1" />
                                 {influencer.location}
                               </span>
-                              <Badge variant="outline">{influencer.niche}</Badge>
+                              <Badge variant="outline" className="border-gray-300">{influencer.niche}</Badge>
                             </div>
                           </div>
                           <div className="text-right">
@@ -356,7 +356,7 @@ export default function InfluencerMatch() {
 
                         <div className="flex flex-wrap gap-1">
                           {influencer.tags.split(",").map((tag, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
+                            <Badge key={index} variant="secondary" className="text-xs border-gray-300">
                               #{tag.trim()}
 
                             </Badge>
@@ -373,8 +373,8 @@ export default function InfluencerMatch() {
 
         {/* Influencer Enrollment Tab */}
         <TabsContent value="influencer" className="space-y-6">
-          <Card className="max-w-2xl mx-auto border-0 shadow-soft">
-            <CardHeader>
+          <Card className="max-w-2xl mx-auto border-0 shadow-soft border-gray-300">
+            <CardHeader className="border-b border-gray-300 pb-4">
               <CardTitle className="flex items-center">
                 <Star className="w-5 h-5 mr-2" />
                 Join as an Influencer
@@ -394,6 +394,7 @@ export default function InfluencerMatch() {
                       name="name"
                       value={signupForm.name}
                       onChange={handleSignupChange}
+                      className="border-gray-300"
                       placeholder="Your name"
                       required
                     />
@@ -405,6 +406,7 @@ export default function InfluencerMatch() {
                       name="handle"
                       value={signupForm.handle}
                       onChange={handleSignupChange}
+                      className="border-gray-300"
                       placeholder="@yourusername"
                       required
                     />
@@ -417,6 +419,7 @@ export default function InfluencerMatch() {
                     name="niche"
                     value={signupForm.niche}
                     onChange={handleSignupChange}
+                    className="border-gray-300"
                     placeholder="e.g., Food, Travel, Lifestyle"
                     required
                   />
@@ -428,6 +431,7 @@ export default function InfluencerMatch() {
                     name="bio"
                     value={signupForm.bio}
                     onChange={handleSignupChange}
+                    className="border-gray-300"
                     placeholder="Tell brands about yourself and your content..."
                     rows={3}
                     required
@@ -441,6 +445,7 @@ export default function InfluencerMatch() {
                       name="followers"
                       value={signupForm.followers}
                       onChange={handleSignupChange}
+                      className="border-gray-300"
                       placeholder="e.g., 10K"
                       required
                     />
@@ -452,6 +457,7 @@ export default function InfluencerMatch() {
                       name="engagement"
                       value={signupForm.engagement}
                       onChange={handleSignupChange}
+                      className="border-gray-300"
                       placeholder="e.g., 8.4%"
                       required
                     />
@@ -465,6 +471,7 @@ export default function InfluencerMatch() {
                       name="location"
                       value={signupForm.location}
                       onChange={handleSignupChange}
+                      className="border-gray-300"
                       placeholder="City, State"
                       required
                     />
@@ -476,6 +483,7 @@ export default function InfluencerMatch() {
                       name="profile_url"
                       value={signupForm.profile_url}
                       onChange={handleSignupChange}
+                      className="border-gray-300"
                       placeholder="https://instagram.com/yourprofile"
                       required
                     />
@@ -488,6 +496,7 @@ export default function InfluencerMatch() {
                     name="platforms"
                     value={signupForm.platforms}
                     onChange={handleSignupChange}
+                    className="border-gray-300"
                     placeholder="instagram, youtube, twitter"
                     required
                   />
@@ -499,6 +508,7 @@ export default function InfluencerMatch() {
                     name="tags"
                     value={signupForm.tags}
                     onChange={handleSignupChange}
+                    className="border-gray-300"
                     placeholder="Food, Recipes, Sustainable"
                   />
                 </div>
