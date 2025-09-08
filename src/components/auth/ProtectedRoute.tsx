@@ -1,51 +1,45 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
-import { Loader2 } from "lucide-react";
+import { ReactNode } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
-  redirectTo?: string;
+  children: ReactNode;
 }
 
-export const ProtectedRoute = ({ children, redirectTo = "/login" }: ProtectedRouteProps) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const navigate = useNavigate();
+export function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { user, loading, emailVerified, hasOnboarded } = useAuth();
+  const location = useLocation();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        
-        if (error || !user) {
-          setIsAuthenticated(false);
-          navigate(redirectTo);
-        } else {
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error('Auth check error:', error);
-        setIsAuthenticated(false);
-        navigate(redirectTo);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, [navigate, redirectTo]);
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Loading...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p>Loading...</p>
         </div>
       </div>
     );
   }
 
-  return isAuthenticated ? <>{children}</> : null;
-}; 
+  // Not logged in → redirect to login
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Logged in but email not verified → redirect to email verification
+  if (!emailVerified && location.pathname !== "/verify-email") {
+    return <Navigate to="/verify-email" replace />;
+  }
+
+  // Email verified but not onboarded → redirect to onboarding
+  if (emailVerified && !hasOnboarded && location.pathname !== "/onboarding") {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  // Email verified and onboarded but on verify/onboarding pages → redirect to dashboard
+  if (emailVerified && hasOnboarded && (location.pathname === "/verify-email" || location.pathname === "/onboarding")) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+}

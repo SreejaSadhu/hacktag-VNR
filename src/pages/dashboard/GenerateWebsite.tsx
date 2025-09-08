@@ -301,63 +301,63 @@ export default function GenerateWebsite() {
         {/* Website Generation Tab */}
         <TabsContent value="website" className="space-y-6">
                     {!hasGeneratedWebsite ? (
-            <Card className="border-0 shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Wand2 className="w-5 h-5 mr-2" />
-                  Tell us about your business
-                </CardTitle>
+        <Card className="border-0 shadow-soft">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Wand2 className="w-5 h-5 mr-2" />
+              Tell us about your business
+            </CardTitle>
                 
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Business Description</label>
-                  <Textarea
-                    placeholder="e.g., I run a cozy bakery in downtown Portland that specializes in organic sourdough bread and artisanal pastries. We focus on local ingredients and have a warm, community-focused atmosphere..."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={4}
-                    className="resize-none"
-                  />
-                </div>
-                <Button
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Business Description</label>
+              <Textarea
+                placeholder="e.g., I run a cozy bakery in downtown Portland that specializes in organic sourdough bread and artisanal pastries. We focus on local ingredients and have a warm, community-focused atmosphere..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+                className="resize-none"
+              />
+            </div>
+            <Button
                   onClick={handleGenerateWebsite}
                   disabled={!description.trim() || isGeneratingWebsite}
-                  className="w-full h-12"
-                  size="lg"
-                >
+              className="w-full h-12"
+              size="lg"
+            >
                   {isGeneratingWebsite ? (
-                    <>
-                      <span>Generating...</span>
-                      <Sparkles className="w-5 h-5 ml-2 animate-spin" />
-                    </>
-                  ) : (
-                    "Generate Website"
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-6">
-              {/* Website Info */}
-              <Card className="border-0 shadow-soft">
-                <CardHeader>
+                <>
+                  <span>Generating...</span>
+                  <Sparkles className="w-5 h-5 ml-2 animate-spin" />
+                </>
+              ) : (
+                "Generate Website"
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-6">
+          {/* Website Info */}
+          <Card className="border-0 shadow-soft">
+            <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-lg">{generatedWebsite?.title || "Generated Website"}</CardTitle>
-                      <CardDescription>
-                        {generatedWebsite?.description}
-                      </CardDescription>
+              <CardTitle className="text-lg">{generatedWebsite?.title || "Generated Website"}</CardTitle>
+              <CardDescription>
+                {generatedWebsite?.description}
+              </CardDescription>
                     </div>
-                    <div className="flex space-x-2">
+              <div className="flex space-x-2">
                       <Button variant="outline" onClick={handlePreviewGenerated}>
-                        <Eye className="w-4 h-4 mr-2" />
+                  <Eye className="w-4 h-4 mr-2" />
                         Open in New Tab
-                      </Button>
-                      <Button onClick={handleDownload}>
-                        <Download className="w-4 h-4 mr-2" />
-                        Download
-                      </Button>
+                </Button>
+                <Button onClick={handleDownload}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
                       <Button variant="outline" onClick={handleClearGeneratedWebsite}>
                         <Trash2 className="w-4 h-4 mr-2" />
                         Clear
@@ -367,12 +367,12 @@ export default function GenerateWebsite() {
                         Generate New
                       </Button>
                     </div>
-                  </div>
+              </div>
                 </CardHeader>
-              </Card>
+          </Card>
 
               {/* Website Preview & Code Tabs */}
-              <Card className="border-0 shadow-soft">
+          <Card className="border-0 shadow-soft">
                 <CardHeader className="pb-0">
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
@@ -414,20 +414,20 @@ export default function GenerateWebsite() {
                     <TabsContent value="code" className="mt-4">
                       <div className="space-y-6">
                         <div>
-                          <h4 className="text-sm font-medium mb-2">HTML Structure</h4>
-                          <div className="bg-muted rounded-lg p-4 max-h-96 overflow-y-auto">
-                            <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
-                              {generatedWebsite?.html || "No HTML generated yet"}
-                            </pre>
-                          </div>
-                        </div>
+                <h4 className="text-sm font-medium mb-2">HTML Structure</h4>
+                <div className="bg-muted rounded-lg p-4 max-h-96 overflow-y-auto">
+                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
+                    {generatedWebsite?.html || "No HTML generated yet"}
+                  </pre>
+                </div>
+              </div>
                         <div>
-                          <h4 className="text-sm font-medium mb-2">CSS Styles</h4>
-                          <div className="bg-muted rounded-lg p-4 max-h-96 overflow-y-auto">
-                            <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
-                              {generatedWebsite?.css || "No CSS generated yet"}
-                            </pre>
-                          </div>
+                <h4 className="text-sm font-medium mb-2">CSS Styles</h4>
+                <div className="bg-muted rounded-lg p-4 max-h-96 overflow-y-auto">
+                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
+                    {generatedWebsite?.css || "No CSS generated yet"}
+                  </pre>
+                </div>
                         </div>
                       </div>
                     </TabsContent>
@@ -642,7 +642,7 @@ export default function GenerateWebsite() {
               <CardContent className="p-12 text-center">
                 <div className="w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Globe className="w-8 h-8 text-white" />
-                </div>
+        </div>
                 <h3 className="text-xl font-semibold mb-2">No websites yet</h3>
                 <p className="text-muted-foreground mb-6">
                   Create your first AI-generated website to get started.

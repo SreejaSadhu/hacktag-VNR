@@ -7,16 +7,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AILoading } from "@/components/ui/LoadingSpinner";
-
 import { generateEmail, EmailGenerationResponse } from "@/lib/gemini";
-import * as XLSX from 'xlsx';
 import { 
   Mail, 
   Sparkles, 
   Send, 
   Calendar,
-  Target
+  Target,
+  Upload,
+  FileText
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function EmailMarketing() {
   const [goal, setGoal] = useState("");
@@ -32,6 +33,7 @@ export default function EmailMarketing() {
   const [filePreview, setFilePreview] = useState<any[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
+  const { toast } = useToast();
 
   const handleGenerate = async () => {
     if (!goal.trim()) return;
@@ -48,18 +50,15 @@ export default function EmailMarketing() {
       // Check if the result contains an error message
       if (result.subject.startsWith('❌')) {
         setError(result.description);
-
       } else {
         setEmailSubject(result.subject);
         setEmailContent(result.content);
         setEmailDescription(result.description);
         setHasGenerated(true);
-
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to generate email";
       setError(errorMessage);
-
     } finally {
       setIsGenerating(false);
     }
@@ -68,7 +67,10 @@ export default function EmailMarketing() {
   const handleCopy = () => {
     const fullEmail = `Subject: ${emailSubject}\n\n${emailContent}`;
     navigator.clipboard.writeText(fullEmail);
-
+    toast({
+      title: "Copied!",
+      description: "Email content copied to clipboard.",
+    });
   };
 
   const handleRegenerate = () => {
@@ -84,264 +86,243 @@ export default function EmailMarketing() {
     // Check if it's an Excel file
     if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
       setIsUploading(false);
+      setError("Please upload an Excel file (.xlsx or .xls)");
       return;
     }
 
     setUploadedFile(file);
+    
+    // Temporarily disable Excel processing until xlsx is properly installed
+    setError("Excel file upload is temporarily disabled. Please enter email addresses manually.");
+    setIsUploading(false);
+  };
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        
-        // Get the first worksheet
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        
-        // Convert to JSON for easier processing
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        
-        const emails: string[] = [];
-        const previewData: any[] = [];
-        
-        // Process each row
-        jsonData.forEach((row: any, index: number) => {
-          if (Array.isArray(row)) {
-            // Look for emails in each cell
-            row.forEach((cell: any) => {
-              if (typeof cell === 'string') {
-                const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
-                const matches = cell.match(emailRegex);
-                if (matches) {
-                  emails.push(...matches);
-                }
-              }
-            });
-            
-            // Create preview data (first 5 rows)
-            if (index < 5) {
-              previewData.push(row);
-            }
-          }
-        });
+  const handleManualEmailAdd = () => {
+    const email = prompt("Enter email address:");
+    if (email && email.includes('@')) {
+      setUploadedEmails(prev => [...prev, email]);
+      toast({
+        title: "Email added",
+        description: `${email} has been added to your list.`,
+      });
+    }
+  };
 
-        setUploadedEmails(emails);
-        setFilePreview(previewData);
-      } catch (error) {
-        console.error('Error parsing Excel file:', error);
-      }
-      setIsUploading(false);
-    };
-
-    reader.readAsArrayBuffer(file);
+  const removeEmail = (index: number) => {
+    setUploadedEmails(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="text-center space-y-4">
-        <div className="flex justify-center">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-primary flex items-center justify-center">
-            <Mail className="w-8 h-8 text-white" />
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Email Marketing</h1>
+          <p className="text-muted-foreground">Create engaging email campaigns with AI</p>
         </div>
-        <h1 className="text-3xl font-bold">AI Email Marketing</h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-        </p>
+        <Button>
+          <Send className="mr-2 h-4 w-4" />
+          Send Campaign
+        </Button>
       </div>
 
-      {/* Error Display */}
-      {error && (
-        <Card className="border-destructive bg-destructive/5">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2 text-destructive">
-              <Target className="w-4 h-4" />
-              <span className="text-sm">{error}</span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Email Generation */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Sparkles className="mr-2 h-5 w-5" />
+                Generate Email Content
+              </CardTitle>
+              <CardDescription>
+                Describe your goal and let AI create compelling email content
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="goal">What's your email goal?</Label>
+                <Textarea
+                  id="goal"
+                  placeholder="e.g., Promote our new product launch, Welcome new customers, Share company updates..."
+                  value={goal}
+                  onChange={(e) => setGoal(e.target.value)}
+                  rows={3}
+                />
+              </div>
 
-      {!hasGenerated ? (
-        /* Email Generation Form */
-        <Card className="border-0 shadow-soft">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Target className="w-5 h-5 mr-2" />
-              Define Your {emailType === 'draft' ? 'Email Draft' : 'Newsletter'} Goal
-            </CardTitle>
-            
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="marketingGoal">
-                {emailType === 'draft' ? 'Email Purpose' : 'Newsletter Content'}
-              </Label>
-              <Textarea
-                id="marketingGoal"
-                value={goal}
-                onChange={(e) => setGoal(e.target.value)}
-                rows={4}
-                className="resize-none"
-                placeholder={
-                  emailType === 'draft' 
-                    ? "e.g., I need to send a professional email to a client about project updates and next steps..."
-                    : "e.g., I want to create a monthly newsletter for my bakery customers with recipes, tips, and special offers..."
-                }
-              />
-              <p className="text-xs text-muted-foreground">
-              </p>
-            </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="emailType">Email Type</Label>
+                  <Select value={emailType} onValueChange={(value: 'draft' | 'newsletter') => setEmailType(value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Email Draft</SelectItem>
+                      <SelectItem value="newsletter">Newsletter</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="emailType">Email Type</Label>
-              <Select value={emailType} onValueChange={(value: 'draft' | 'newsletter') => setEmailType(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Email Draft</SelectItem>
-                  <SelectItem value="newsletter">Newsletter</SelectItem>
-                </SelectContent>
-              </Select>
-             
-            </div>
-
-
-            <Button 
-              onClick={handleGenerate}
-              disabled={!goal.trim() || isGenerating}
-              className="w-full h-12 bg-gradient-primary hover:opacity-90"
-              size="lg"
-            >
-              {isGenerating ? (
-                <>
-                  <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Generating {emailType === 'draft' ? 'Email Draft' : 'Newsletter'}...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Generate {emailType === 'draft' ? 'Email Draft' : 'Newsletter'}
-                </>
+              {error && (
+                <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">
+                  {error}
+                </div>
               )}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-                 /* Generated Email Preview */
-         <div className="space-y-6">
 
-           {/* Email Content */}
-           <Card className="border-0 shadow-soft">
-             <CardHeader>
-               <CardTitle className="flex items-center">
-                 <Mail className="w-5 h-5 mr-2" />
-                 Email Content
-               </CardTitle>
-             </CardHeader>
-             <CardContent>
-               <div className="space-y-4">
-                 <div className="bg-muted/30 rounded-lg p-4">
-                   <div className="text-sm font-medium text-muted-foreground mb-2">Subject Line:</div>
-                   <div className="text-foreground font-medium">{emailSubject}</div>
-                 </div>
-                 <div className="bg-muted/30 rounded-lg p-6 text-sm">
-                   <div className="whitespace-pre-wrap text-foreground font-sans leading-relaxed">{emailContent}</div>
-                 </div>
-               </div>
-             </CardContent>
-           </Card>
+              <Button 
+                onClick={handleGenerate} 
+                disabled={isGenerating || !goal.trim()}
+                className="w-full"
+              >
+                {isGenerating ? (
+                  <>
+                    <AILoading className="mr-2 h-4 w-4" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generate Email
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
 
-           {/* Upload Email List Section */}
-           <Card className="border-0 shadow-soft">
-             <CardHeader>
-               <CardTitle className="text-lg">Upload Email List</CardTitle>
-             </CardHeader>
-             <CardContent className="space-y-3">
-               <div className="space-y-2">
-                 <Label htmlFor="file-upload" className="text-sm font-medium">
-                   Upload your .xlsx file
-                 </Label>
-                 <input
-                   id="file-upload"
-                   type="file"
-                   accept=".xlsx,.xls"
-                   onChange={handleFileUpload}
-                   className="hidden"
-                 />
-                 <Button 
-                   variant="outline" 
-                   className="w-full"
-                   onClick={() => document.getElementById('file-upload')?.click()}
-                   disabled={isUploading}
-                 >
-                   {isUploading ? (
-                     <>
-                       <div className="w-4 h-4 mr-2 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                       Uploading...
-                     </>
-                   ) : (
-                     <>
-                       <Mail className="w-4 h-4 mr-2" />
-                       Choose File
-                     </>
-                   )}
-                 </Button>
-               </div>
-               
-               {uploadedFile && (
-                 <div className="space-y-3">
-                   <div className="flex items-center space-x-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                     <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                       <Mail className="w-4 h-4 text-green-600" />
-                     </div>
-                     <div className="flex-1">
-                       <div className="text-sm font-medium text-green-800">
-                         {uploadedFile.name}
-                       </div>
-                       <div className="text-xs text-green-600">
-                         {(uploadedFile.size / 1024).toFixed(1)} KB
-                       </div>
-                     </div>
-                   </div>
-                   
-                                       {uploadedEmails.length > 0 && (
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium text-muted-foreground">
-                          Extracted Emails
-                        </div>
-                        <div className="max-h-48 overflow-y-auto bg-muted/30 rounded-lg p-3">
-                          <div className="text-xs font-sans space-y-1">
-                            {uploadedEmails.slice(0, 10).map((email, index) => (
-                              <div key={index} className="text-muted-foreground">
-                                {email}
-                              </div>
-                            ))}
-                            {uploadedEmails.length > 10 && (
-                              <div className="text-muted-foreground">
-                                ... and {uploadedEmails.length - 10} more
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                 </div>
-               )}
-             </CardContent>
-           </Card>
-         </div>
-      )}
+          {/* Generated Email */}
+          {hasGenerated && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Generated Email</span>
+                  <div className="flex space-x-2">
+                    <Button variant="outline" size="sm" onClick={handleRegenerate}>
+                      Regenerate
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleCopy}>
+                      Copy
+                    </Button>
+                  </div>
+                </CardTitle>
+                <CardDescription>{emailDescription}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Subject Line</Label>
+                  <div className="p-3 bg-muted rounded-lg font-medium">
+                    {emailSubject}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Email Content</Label>
+                  <div className="p-3 bg-muted rounded-lg whitespace-pre-wrap text-sm">
+                    {emailContent}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
-      {/* Loading Overlay */}
-      {isGenerating && (
-        <AILoading 
-          text="Crafting your perfect marketing email..."
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50"
-        />
-      )}
+        {/* Email List Management */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Mail className="mr-2 h-5 w-5" />
+                Email List
+              </CardTitle>
+              <CardDescription>
+                Manage your email subscribers and upload contact lists
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* File Upload */}
+              <div className="space-y-2">
+                <Label>Upload Contact List</Label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600 mb-2">
+                    Upload Excel file (.xlsx, .xls) with email addresses
+                  </p>
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label htmlFor="file-upload">
+                    <Button variant="outline" size="sm" asChild>
+                      <span>Choose File</span>
+                    </Button>
+                  </label>
+                </div>
+              </div>
+
+              {/* Manual Add */}
+              <div className="space-y-2">
+                <Label>Add Email Manually</Label>
+                <div className="flex space-x-2">
+                  <Input placeholder="Enter email address" disabled />
+                  <Button variant="outline" onClick={handleManualEmailAdd}>
+                    Add
+                  </Button>
+                </div>
+              </div>
+
+              {/* Email List */}
+              <div className="space-y-2">
+                <Label>Current List ({uploadedEmails.length} emails)</Label>
+                <div className="max-h-48 overflow-y-auto space-y-1">
+                  {uploadedEmails.map((email, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                      <span className="text-sm">{email}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeEmail(index)}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))}
+                  {uploadedEmails.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No emails added yet
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Campaign Stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Target className="mr-2 h-5 w-5" />
+                Campaign Stats
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold">{uploadedEmails.length}</div>
+                  <p className="text-sm text-muted-foreground">Subscribers</p>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold">0</div>
+                  <p className="text-sm text-muted-foreground">Sent Today</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

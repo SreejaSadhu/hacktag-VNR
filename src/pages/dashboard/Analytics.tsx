@@ -1,389 +1,77 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
 import { 
   BarChart3, 
   TrendingUp, 
   Users, 
-  Mail, 
-  Bot,
-  Eye,
-  MousePointer,
+  Eye, 
+  MousePointer, 
+  Calendar,
   Download,
-  ArrowUpRight,
-  ArrowDownRight,
-  Play,
-  Pause,
-  Activity,
-  Loader2
+  Filter
 } from "lucide-react";
-import { getCurrentUser, getAnalyticsData, logAnalyticsEvent } from "@/lib/supabase";
-
-interface AnalyticsData {
-  overviewStats: {
-    title: string;
-    value: string;
-    change: string;
-    changeType: "increase" | "decrease";
-    icon: any;
-    period: string;
-    trend: number[];
-  }[];
-  websiteAnalytics: {
-    website: string;
-    views: string;
-    visitors: string;
-    bounceRate: string;
-    avgTime: string;
-    status: "live" | "draft" | "paused";
-    realTimeViews: number;
-    conversionRate: string;
-    revenue: string;
-  }[];
-  topPages: {
-    page: string;
-    views: string;
-    title: string;
-    change: string;
-    trend: "up" | "down" | "stable";
-  }[];
-  liveEvents: {
-    id: string;
-    type: "view" | "conversion" | "email_open" | "chat_session";
-    message: string;
-    time: string;
-    value: string;
-  }[];
-  marketingMetrics: {
-    emailOpenRate: number;
-    emailClickRate: number;
-    conversionRate: number;
-    influencerReach: number;
-    activePartnerships: number;
-  };
-  engagementMetrics: {
-    chatbotSessions: number;
-    avgSessionLength: string;
-    messagesPerSession: number;
-    satisfactionRate: number;
-    bounceRate: number;
-    pagesPerSession: number;
-    sessionDuration: string;
-    returnVisitors: number;
-    monthlyGrowth: number;
-    newUsers: number;
-    engagementRate: number;
-    conversionRate: number;
-  };
-}
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 export default function Analytics() {
-  const [isLive, setIsLive] = useState(true);
-  const [selectedPeriod, setSelectedPeriod] = useState("30d");
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [period, setPeriod] = useState("30d");
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const liveIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [data, setData] = useState<AnalyticsData>({
-    overviewStats: [],
-    websiteAnalytics: [],
-    topPages: [],
-    liveEvents: [],
-    marketingMetrics: {
-      emailOpenRate: 0,
-      emailClickRate: 0,
-      conversionRate: 0,
-      influencerReach: 0,
-      activePartnerships: 0
-    },
-    engagementMetrics: {
-      chatbotSessions: 0,
-      avgSessionLength: "0m 0s",
-      messagesPerSession: 0,
-      satisfactionRate: 0,
-      bounceRate: 0,
-      pagesPerSession: 0,
-      sessionDuration: "0m 0s",
-      returnVisitors: 0,
-      monthlyGrowth: 0,
-      newUsers: 0,
-      engagementRate: 0,
-      conversionRate: 0
-    }
-  });
-
-  // Get current user and fetch data
   useEffect(() => {
-    const fetchUserAndData = async () => {
-      try {
-        setIsLoading(true);
-        const { user, error } = await getCurrentUser();
-        
-        if (error || !user) {
-          console.error('Error getting current user:', error);
-          return;
-        }
+    // Load analytics data from localStorage
+    const loadAnalyticsData = () => {
+      const websites = JSON.parse(localStorage.getItem('websites') || '[]');
+      const emails = JSON.parse(localStorage.getItem('emails') || '[]');
+      const insights = JSON.parse(localStorage.getItem('insights') || '[]');
+      const images = JSON.parse(localStorage.getItem('generatedImages') || '[]');
 
-        setCurrentUser(user);
-        await fetchAnalyticsData(user.id, selectedPeriod);
-      } catch (error) {
-        console.error('Error fetching user and data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUserAndData();
-  }, []);
-
-  // Fetch analytics data when period changes
-  useEffect(() => {
-    if (currentUser) {
-      fetchAnalyticsData(currentUser.id, selectedPeriod);
-    }
-  }, [selectedPeriod, currentUser]);
-
-  const fetchAnalyticsData = async (userId: string, period: string) => {
-    try {
-      const { data: analyticsData, error } = await getAnalyticsData(userId, period);
-      
-      if (error) {
-        console.error('Error fetching analytics data:', error);
-        return;
-      }
-
-      if (!analyticsData) return;
-
-      const { websites, analytics, emailCampaigns } = analyticsData;
-
-      // Calculate overview stats from real data
-      const totalViews = analytics.filter(e => e.event_type === 'page_view').length;
-      const uniqueVisitors = new Set(analytics.filter(e => e.event_type === 'page_view').map(e => e.session_id)).size;
-      const emailOpens = analytics.filter(e => e.event_type === 'email_open').length;
-      const botInteractions = analytics.filter(e => e.event_type === 'chat_session').length;
-
-      // Calculate website analytics from real data
-      const websiteAnalytics = websites.map(website => {
-        const websiteAnalytics = analytics.filter(e => e.website_id === website.id);
-        const views = websiteAnalytics.filter(e => e.event_type === 'page_view').length;
-        const uniqueVisitors = new Set(websiteAnalytics.filter(e => e.event_type === 'page_view').map(e => e.session_id)).size;
-        
-        return {
-          website: website.title || website.business_name || 'Untitled Website',
-          views: views.toString(),
-          visitors: uniqueVisitors.toString(),
-          bounceRate: "34%", // Mock for now
-          avgTime: "2m 45s", // Mock for now
-          status: website.is_published ? "live" : "draft" as "live" | "draft" | "paused",
-          realTimeViews: 0,
-          conversionRate: "4.2%", // Mock for now
-          revenue: "$0" // Mock for now
-        };
-      });
-
-      // Calculate top pages from analytics
-      const pageViews = analytics.filter(e => e.event_type === 'page_view');
-      const pageCounts = pageViews.reduce((acc, event) => {
-        const page = event.page_url || '/';
-        acc[page] = (acc[page] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-
-      const topPages = Object.entries(pageCounts)
-        .sort(([,a], [,b]) => Number(b) - Number(a))
-        .slice(0, 5)
-        .map(([page, views]) => ({
-          page,
-          views: views.toString(),
-          title: page === '/' ? 'Homepage' : page.split('/').pop() || 'Page',
-          change: "+12%", // Mock for now
-          trend: "up" as "up" | "down" | "stable"
-        }));
-
-      // Calculate marketing metrics from email campaigns
-      const totalEmails = emailCampaigns.length;
-      const totalOpens = emailCampaigns.reduce((sum, campaign) => sum + (campaign.open_count || 0), 0);
-      const totalClicks = emailCampaigns.reduce((sum, campaign) => sum + (campaign.click_count || 0), 0);
-      const emailOpenRate = totalEmails > 0 ? (totalOpens / totalEmails) * 100 : 0;
-      const emailClickRate = totalOpens > 0 ? (totalClicks / totalOpens) * 100 : 0;
-
-      // Calculate engagement metrics
-      const chatSessions = analytics.filter(e => e.event_type === 'chat_session').length;
-      const totalSessions = new Set(analytics.map(e => e.session_id)).size;
-      const avgSessionLength = totalSessions > 0 ? "3m 24s" : "0m 0s"; // Mock for now
-
-      setData({
-        overviewStats: [
-    {
-      title: "Total Views",
-            value: totalViews.toString(),
-      change: "+15.3%",
-      changeType: "increase",
-      icon: Eye,
-            period: "vs last month",
-            trend: [1200, 1350, 1420, 1380, 1560, 1620, 1580, 1720, 1840, 1920, 2010, 2180]
-    },
-    {
-      title: "Unique Visitors",
-            value: uniqueVisitors.toString(),
-      change: "+8.7%", 
-      changeType: "increase",
-      icon: Users,
-            period: "vs last month",
-            trend: [800, 850, 920, 880, 950, 1020, 980, 1050, 1120, 1180, 1240, 1320]
-    },
-    {
-      title: "Email Opens",
-            value: emailOpens.toString(),
-      change: "+23.1%",
-      changeType: "increase",
-      icon: Mail,
-            period: "vs last month",
-            trend: [300, 320, 350, 380, 420, 450, 480, 520, 560, 600, 640, 680]
-    },
-    {
-      title: "Bot Interactions",
-            value: botInteractions.toString(),
-      change: "-2.4%",
-      changeType: "decrease",
-      icon: Bot,
-            period: "vs last month",
-            trend: [200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 420]
-          }
+      // Generate mock analytics data
+      const mockData = {
+        websites: websites.length,
+        emails: emails.length,
+        insights: insights.length,
+        images: images.length,
+        pageViews: Math.floor(Math.random() * 1000) + 500,
+        uniqueVisitors: Math.floor(Math.random() * 300) + 200,
+        conversionRate: (Math.random() * 5 + 2).toFixed(2),
+        bounceRate: (Math.random() * 30 + 20).toFixed(2),
+        avgSessionDuration: Math.floor(Math.random() * 300) + 120,
+        topPages: [
+          { name: 'Homepage', views: 450, conversion: 3.2 },
+          { name: 'About Us', views: 320, conversion: 2.8 },
+          { name: 'Services', views: 280, conversion: 4.1 },
+          { name: 'Contact', views: 180, conversion: 5.5 }
         ],
-        websiteAnalytics,
-        topPages,
-        liveEvents: [],
-        marketingMetrics: {
-          emailOpenRate,
-          emailClickRate,
-          conversionRate: 2.3,
-          influencerReach: 12500,
-          activePartnerships: 3
-        },
-        engagementMetrics: {
-          chatbotSessions: chatSessions,
-          avgSessionLength,
-          messagesPerSession: 5,
-          satisfactionRate: 85,
-          bounceRate: 34,
-          pagesPerSession: 2.5,
-          sessionDuration: "3m 24s",
-          returnVisitors: Math.floor(uniqueVisitors * 0.3),
-          monthlyGrowth: 15,
-          newUsers: uniqueVisitors,
-          engagementRate: 65,
-          conversionRate: 2.3
-        }
-      });
-    } catch (error) {
-      console.error('Error processing analytics data:', error);
-    }
-  };
+        trafficSources: [
+          { name: 'Direct', value: 40, color: '#8884d8' },
+          { name: 'Organic Search', value: 35, color: '#82ca9d' },
+          { name: 'Social Media', value: 15, color: '#ffc658' },
+          { name: 'Referral', value: 10, color: '#ff7300' }
+        ],
+        weeklyData: [
+          { week: 'Week 1', visitors: 120, pageViews: 450, conversions: 8 },
+          { week: 'Week 2', visitors: 180, pageViews: 620, conversions: 12 },
+          { week: 'Week 3', visitors: 220, pageViews: 780, conversions: 15 },
+          { week: 'Week 4', visitors: 280, pageViews: 920, conversions: 18 }
+        ]
+      };
 
-  // Real-time clock
-  useEffect(() => {
-    const clockInterval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    return () => clearInterval(clockInterval);
-  }, []);
-
-  // Live data simulation
-  useEffect(() => {
-    if (!isLive) {
-      if (liveIntervalRef.current) {
-        clearInterval(liveIntervalRef.current);
-        liveIntervalRef.current = null;
-      }
-      return;
-    }
-
-    liveIntervalRef.current = setInterval(() => {
-      setData(prevData => {
-        // Simulate real-time view updates
-        const updatedWebsiteAnalytics = prevData.websiteAnalytics.map(site => ({
-          ...site,
-          realTimeViews: site.status === "live" ? 
-            site.realTimeViews + Math.floor(Math.random() * 3) : site.realTimeViews
-        }));
-
-        // Simulate live events
-        const eventTypes = ["view", "conversion", "email_open", "chat_session"];
-        const newEvent = {
-          id: Date.now().toString(),
-          type: eventTypes[Math.floor(Math.random() * eventTypes.length)] as any,
-          message: generateEventMessage(),
-          time: new Date().toLocaleTimeString(),
-          value: generateEventValue()
-        };
-
-        const updatedLiveEvents = [newEvent, ...prevData.liveEvents.slice(0, 9)];
-
-        // Update overview stats with small random changes
-        const updatedOverviewStats = prevData.overviewStats.map(stat => ({
-          ...stat,
-          value: updateStatValue(stat.value, stat.changeType)
-        }));
-
-        return {
-          ...prevData,
-          websiteAnalytics: updatedWebsiteAnalytics,
-          liveEvents: updatedLiveEvents,
-          overviewStats: updatedOverviewStats
-        };
-      });
-    }, 3000);
-
-    return () => {
-      if (liveIntervalRef.current) {
-        clearInterval(liveIntervalRef.current);
-      }
+      setAnalyticsData(mockData);
+      setIsLoading(false);
     };
-  }, [isLive]);
 
-  const generateEventMessage = () => {
-    const messages = [
-      "New visitor on website",
-      "Email opened: Campaign",
-      "Chat session started with AI assistant",
-      "Conversion: Page to checkout",
-      "Return visitor on website",
-      "Email campaign: Open rate achieved",
-      "Influencer post generated reach",
-      "New lead captured from form",
-      "Page viewed for 3+ minutes",
-      "Mobile user engaged with chatbot"
-    ];
-    return messages[Math.floor(Math.random() * messages.length)];
-  };
-
-  const generateEventValue = () => {
-    const values = ["+1 view", "+$45 revenue", "+1 email open", "+1 chat session", "+1 conversion"];
-    return values[Math.floor(Math.random() * values.length)];
-  };
-
-  const updateStatValue = (currentValue: string, changeType: "increase" | "decrease") => {
-    const numericValue = parseInt(currentValue.replace(/,/g, ""));
-    const change = Math.floor(Math.random() * 5) + 1;
-    const newValue = changeType === "increase" ? numericValue + change : numericValue - change;
-    return newValue.toLocaleString();
-  };
-
-
+    loadAnalyticsData();
+  }, [period]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Loading analytics...</p>
+          <BarChart3 className="h-8 w-8 animate-spin mx-auto mb-2" />
+          <p>Loading analytics...</p>
         </div>
       </div>
     );
@@ -394,265 +82,206 @@ export default function Analytics() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Analytics Dashboard</h1>
-          <p className="text-muted-foreground">
-            Track performance across all your websites and marketing campaigns.
-          </p>
+          <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
+          <p className="text-muted-foreground">Track your business performance and insights</p>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-            <Activity className="w-4 h-4" />
-            <span>{currentTime.toLocaleTimeString()}</span>
-          </div>
-          <Button 
-            variant={isLive ? "default" : "outline"}
-            size="sm"
-            onClick={() => setIsLive(!isLive)}
-            className="flex items-center space-x-2"
-          >
-            {isLive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-            <span>{isLive ? "Live" : "Paused"}</span>
-          </Button>
-          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+          <Select value={period} onValueChange={setPeriod}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="7d">Last 7 Days</SelectItem>
-              <SelectItem value="30d">Last 30 Days</SelectItem>
-              <SelectItem value="90d">Last 90 Days</SelectItem>
+              <SelectItem value="7d">Last 7 days</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="90d">Last 90 days</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
+          <Button variant="outline">
+            <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
         </div>
       </div>
 
-
-
-      {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {data.overviewStats.map((stat, index) => (
-          <Card key={index} className="border-0 shadow-soft hover-lift">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <div className="flex items-center text-sm">
-                {stat.changeType === "increase" ? (
-                  <ArrowUpRight className="w-3 h-3 text-success mr-1" />
-                ) : (
-                  <ArrowDownRight className="w-3 h-3 text-destructive mr-1" />
-                )}
-                <span className={stat.changeType === "increase" ? "text-success" : "text-destructive"}>
-                  {stat.change}
-                </span>
-                <span className="text-muted-foreground ml-1">{stat.period}</span>
-              </div>
-              {/* Mini trend chart */}
-              <div className="flex items-center space-x-1 mt-2">
-                {stat.trend.slice(-6).map((value, i) => (
-                  <div
-                    key={i}
-                    className="w-1 bg-muted-foreground/20 rounded-full"
-                    style={{ height: `${(value / Math.max(...stat.trend)) * 20}px` }}
-                  ></div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Key Metrics */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Page Views</CardTitle>
+            <Eye className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analyticsData.pageViews.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              +12% from last period
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Unique Visitors</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analyticsData.uniqueVisitors.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              +8% from last period
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+            <MousePointer className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analyticsData.conversionRate}%</div>
+            <p className="text-xs text-muted-foreground">
+              +0.5% from last period
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg. Session</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{Math.floor(analyticsData.avgSessionDuration / 60)}m {analyticsData.avgSessionDuration % 60}s</div>
+            <p className="text-xs text-muted-foreground">
+              +15s from last period
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      <Tabs defaultValue="marketing" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="marketing">Marketing Performance</TabsTrigger>
-          <TabsTrigger value="engagement">User Engagement</TabsTrigger>
-        </TabsList>
+      {/* Charts */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Traffic Trend */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Traffic Trend</CardTitle>
+            <CardDescription>Weekly visitor and page view trends</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={analyticsData.weeklyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="week" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="visitors" stroke="#8884d8" strokeWidth={2} />
+                <Line type="monotone" dataKey="pageViews" stroke="#82ca9d" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
+        {/* Traffic Sources */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Traffic Sources</CardTitle>
+            <CardDescription>Where your visitors come from</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={analyticsData.trafficSources}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {analyticsData.trafficSources.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
 
-
-        {/* Marketing Performance */}
-        <TabsContent value="marketing" className="space-y-6">
-          <div className="grid lg:grid-cols-2 gap-6">
-            <Card className="border-0 shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Mail className="w-5 h-5 mr-2" />
-                  Email Campaigns
-                  {isLive && <div className="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-3 gap-4 text-center">
+      {/* Top Pages */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Top Performing Pages</CardTitle>
+          <CardDescription>Pages with highest engagement and conversions</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {analyticsData.topPages.map((page: any, index: number) => (
+              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <Badge variant="secondary">{index + 1}</Badge>
                   <div>
-                    <div className="text-2xl font-bold">{data.marketingMetrics.emailOpenRate}%</div>
-                    <div className="text-xs text-muted-foreground">Open Rate</div>
-                    <Progress value={data.marketingMetrics.emailOpenRate} className="mt-2" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">{data.marketingMetrics.emailClickRate}%</div>
-                    <div className="text-xs text-muted-foreground">Click Rate</div>
-                    <Progress value={data.marketingMetrics.emailClickRate} className="mt-2" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">{data.marketingMetrics.conversionRate}%</div>
-                    <div className="text-xs text-muted-foreground">Conversion</div>
-                    <Progress value={data.marketingMetrics.conversionRate} className="mt-2" />
+                    <p className="font-medium">{page.name}</p>
+                    <p className="text-sm text-muted-foreground">{page.views.toLocaleString()} views</p>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Weekend Promo</span>
-                    <span className="text-success">+15.2%</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>New Product Launch</span>
-                    <span className="text-success">+8.9%</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Customer Win-back</span>
-                    <span className="text-warning">+2.1%</span>
-                  </div>
+                <div className="text-right">
+                  <p className="font-medium">{page.conversion}%</p>
+                  <p className="text-sm text-muted-foreground">conversion rate</p>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Users className="w-5 h-5 mr-2" />
-                  Influencer Campaigns
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold">{data.marketingMetrics.activePartnerships}</div>
-                    <div className="text-xs text-muted-foreground">Active Partnerships</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">{data.marketingMetrics.influencerReach.toLocaleString()}</div>
-                    <div className="text-xs text-muted-foreground">Total Reach</div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>@sarahfoodblog</span>
-                    <span className="text-success">5.2K reach</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>@mikeskitchen</span>
-                    <span className="text-success">4.1K reach</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>@foodieadventures</span>
-                    <span className="text-success">3.2K reach</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+            ))}
           </div>
-        </TabsContent>
+        </CardContent>
+      </Card>
 
-        {/* User Engagement */}
-        <TabsContent value="engagement" className="space-y-6">
-          <div className="grid lg:grid-cols-3 gap-6">
-            <Card className="border-0 shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Bot className="w-5 h-5 mr-2" />
-                  AI Chatbot
-                  {isLive && <div className="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center">
-                  <div className="text-3xl font-bold">{data.engagementMetrics.chatbotSessions.toLocaleString()}</div>
-                  <div className="text-sm text-muted-foreground">Total Sessions</div>
-                </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Avg. Session Length</span>
-                    <span className="font-medium">{data.engagementMetrics.avgSessionLength}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Messages per Session</span>
-                    <span className="font-medium">{data.engagementMetrics.messagesPerSession}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Satisfaction Rate</span>
-                    <span className="font-medium text-success">{data.engagementMetrics.satisfactionRate}%</span>
-                  </div>
-                </div>
-                <Progress value={data.engagementMetrics.satisfactionRate} className="w-full" />
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <MousePointer className="w-5 h-5 mr-2" />
-                  User Behavior
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center">
-                  <div className="text-3xl font-bold">{data.engagementMetrics.bounceRate}%</div>
-                  <div className="text-sm text-muted-foreground">Avg. Bounce Rate</div>
-                </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Pages per Session</span>
-                    <span className="font-medium">{data.engagementMetrics.pagesPerSession}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Session Duration</span>
-                    <span className="font-medium">{data.engagementMetrics.sessionDuration}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Return Visitors</span>
-                    <span className="font-medium">{data.engagementMetrics.returnVisitors}%</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <TrendingUp className="w-5 h-5 mr-2" />
-                  Growth Metrics
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-success">+{data.engagementMetrics.monthlyGrowth}%</div>
-                  <div className="text-sm text-muted-foreground">Monthly Growth</div>
-                </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>New Users</span>
-                    <span className="font-medium text-success">+{data.engagementMetrics.newUsers}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Engagement Rate</span>
-                    <span className="font-medium text-success">+{data.engagementMetrics.engagementRate}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Conversion Rate</span>
-                    <span className="font-medium text-success">+{data.engagementMetrics.conversionRate}%</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+      {/* AI Insights Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <BarChart3 className="mr-2 h-5 w-5" />
+            AI-Generated Insights
+          </CardTitle>
+          <CardDescription>Key insights about your business performance</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-3">
+              <h4 className="font-semibold">Strengths</h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                  <span>High conversion rate on contact page (5.5%)</span>
+                </li>
+                <li className="flex items-start space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                  <span>Strong organic search traffic (35%)</span>
+                </li>
+                <li className="flex items-start space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                  <span>Growing visitor engagement over time</span>
+                </li>
+              </ul>
+            </div>
+            <div className="space-y-3">
+              <h4 className="font-semibold">Opportunities</h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start space-x-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                  <span>Improve homepage conversion rate</span>
+                </li>
+                <li className="flex items-start space-x-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                  <span>Increase social media traffic</span>
+                </li>
+                <li className="flex items-start space-x-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                  <span>Reduce bounce rate on service pages</span>
+                </li>
+              </ul>
+            </div>
           </div>
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }

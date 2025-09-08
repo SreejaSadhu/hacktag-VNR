@@ -1,8 +1,9 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getUserContext } from './supabase';
-
-// Initialize the Gemini API
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || '');
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
+if (!GEMINI_API_KEY) {
+  throw new Error('VITE_GEMINI_API_KEY is not set. Add it to your .env and restart the dev server.');
+}
 
 // --- Chatbot Types and Service ---
 export interface ChatMessage {
@@ -30,16 +31,18 @@ export class GeminiService {
   }
 
   private initializeChat() {
+    if (!genAI) return; // no key, skip chat init
+  
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     this.chat = model.startChat({
       history: [
         {
           role: "user",
-          parts: [{ text: "You are a helpful AI business assistant. You help entrepreneurs and business owners with marketing, website copy, business strategies, and growth ideas. Be conversational, professional, and provide actionable advice. Keep responses concise but informative." }]
+          parts: [{ text: "You are a helpful AI business assistant. ..." }]
         },
         {
           role: "model",
-          parts: [{ text: "I understand! I'm here to help you with your business needs. I can assist with marketing strategies, website copy, business growth ideas, and much more. I'll provide practical, actionable advice while keeping our conversation engaging and professional. What can I help you with today?" }]
+          parts: [{ text: "I understand! I'm here to help you ..." }]
         }
       ],
       generationConfig: {
@@ -48,12 +51,24 @@ export class GeminiService {
       },
     });
   }
+  
 
   // Method to set user context
   async setUserContext(userId: string) {
     this.userId = userId;
     try {
-      const context = await getUserContext(userId);
+      // Get user context from localStorage for now
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const onboardingData = JSON.parse(localStorage.getItem('onboardingData') || '{}');
+      
+      const context: UserContext = {
+        businessProfile: onboardingData,
+        userProfile: user,
+        recentWebsites: [],
+        recentInsights: [],
+        recentEmailCampaigns: []
+      };
+      
       this.userContext = context;
       console.log('✅ User context loaded:', context);
       
@@ -73,14 +88,11 @@ export class GeminiService {
 IMPORTANT: You now have access to the user's business information. Use this context to provide more personalized and relevant advice.
 
 USER'S BUSINESS CONTEXT:
-- Business Name: ${context.businessProfile.business_name || 'Not specified'}
-- Business Type: ${context.businessProfile.business_type || 'Not specified'}
-- Industry: ${context.businessProfile.industry || 'Not specified'}
-- Brand Tone: ${context.businessProfile.brand_tone || 'professional'}
-- User Goal: ${context.businessProfile.user_goal || 'Not specified'}
-- Business Description: ${context.businessProfile.business_description || 'Not specified'}
-- Target Audience: ${context.businessProfile.target_audience || 'Not specified'}
-- Services Offered: ${context.businessProfile.services_offered?.join(', ') || 'Not specified'}
+- Business Name: ${context.businessProfile.businessName || 'Not specified'}
+- Business Type: ${context.businessProfile.businessType || 'Not specified'}
+- Brand Tone: ${context.businessProfile.brandTone || 'professional'}
+- User Goal: ${context.businessProfile.userGoal || 'Not specified'}
+- Services Offered: ${context.businessProfile.topOfferings?.join(', ') || 'Not specified'}
 
 RECENT ACTIVITY:
 - Recent Websites: ${context.recentWebsites.length} websites created
@@ -88,7 +100,7 @@ RECENT ACTIVITY:
 - Recent Email Campaigns: ${context.recentEmailCampaigns.length} campaigns created
 
 Use this information to:
-1. Provide personalized advice based on their specific business type and industry
+1. Provide personalized advice based on their specific business type
 2. Reference their recent activities when relevant
 3. Suggest improvements based on their brand tone and goals
 4. Offer specific recommendations for their target audience
@@ -158,7 +170,7 @@ Always maintain a professional, helpful tone while being conversational.
       // Add user context to the message if available
       let enhancedMessage = message;
       if (this.userContext && this.userContext.businessProfile) {
-        enhancedMessage = `[CONTEXT: ${this.userContext.businessProfile.business_name} - ${this.userContext.businessProfile.business_type} business in ${this.userContext.businessProfile.industry} industry. Brand tone: ${this.userContext.businessProfile.brand_tone}. Goal: ${this.userContext.businessProfile.user_goal}]\n\nUser question: ${message}`;
+        enhancedMessage = `[CONTEXT: ${this.userContext.businessProfile.businessName} - ${this.userContext.businessProfile.businessType} business in ${this.userContext.businessProfile.industry} industry. Brand tone: ${this.userContext.businessProfile.brandTone}. Goal: ${this.userContext.businessProfile.userGoal}]\n\nUser question: ${message}`;
       }
 
       const result = await this.chat.sendMessage(enhancedMessage);
@@ -238,10 +250,7 @@ export async function generateWebsite(request: WebsiteGenerationRequest): Promis
   try {
     console.log('🔍 Starting website generation for:', request.description);
     
-    // Check if API key is set
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (!apiKey) {
-      console.error('❌ No Gemini API key found in environment variables');
+    if (!genAI) {
       return {
         html: '<div style="padding: 20px; text-align: center;"><h2>❌ API Key Missing</h2><p>Please set VITE_GEMINI_API_KEY in your .env file</p></div>',
         css: 'body { font-family: Arial, sans-serif; background: #f5f5f5; }',
@@ -252,6 +261,7 @@ export async function generateWebsite(request: WebsiteGenerationRequest): Promis
     
     console.log('🔑 API key found, initializing Gemini...');
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+    
 
     // Analyze business type from description
     const businessType = analyzeBusinessType(request.description);
@@ -280,7 +290,7 @@ Use a consistent and modern design language. Choose a color scheme, layout style
 - Full screen or 80vh height
 - Large, bold headline tailored to the business
 - Subheading with clear value proposition
-- Prominent call-to-action button like “Order Now”, “Book a Session”, or “Start Free Trial”
+- Prominent call-to-action button like "Order Now", "Book a Session", or "Start Free Trial"
 - Use a relevant high-resolution background image
 - Include entrance animation (fadeIn, zoomIn, etc.)
 
@@ -305,7 +315,7 @@ Use a consistent and modern design language. Choose a color scheme, layout style
 5. Call to Action Section:
 - Bold message encouraging user action
 - Background must use a contextual image or pattern
-- Strong CTA button like “Get Started”, “Try Now”, “Contact Us”
+- Strong CTA button like "Get Started", "Try Now", "Contact Us"
 
 6. Footer:
 - Include logo, navigation links, social icons, and copyright text
@@ -342,8 +352,8 @@ Use a consistent and modern design language. Choose a color scheme, layout style
 -------------------------------------------
 - No lorem ipsum or placeholders
 - Use clear, persuasive, and benefit-focused language
-- Avoid generic phrases like “We are the best”
-- Use real CTAs like “Join Now”, “Explore Menu”, “Book a Free Call”
+- Avoid generic phrases like "We are the best"
+- Use real CTAs like "Join Now", "Explore Menu", "Book a Free Call"
 
 -------------------------------------------
 📦 OUTPUT FORMAT (STRICT)
@@ -372,9 +382,9 @@ Return the result in the following JSON format:
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-
+    
     console.log('📥 Raw API response received:', text.substring(0, 200) + '...');
-
+    
     // Try multiple approaches to extract JSON
     let jsonMatch = text.match(/\{[\s\S]*\}/);
     let parsedResponse;
@@ -438,7 +448,7 @@ Return the result in the following JSON format:
     console.log('📄 Description:', parsedResponse.description);
     console.log('🔧 HTML length:', parsedResponse.html.length);
     console.log('🎨 CSS length:', parsedResponse.css.length);
-
+    
     return {
       html: parsedResponse.html,
       css: parsedResponse.css,
@@ -1237,8 +1247,10 @@ export async function generateImage(request: ImageGenerationRequest): Promise<Im
       console.log('⚠️ Unsplash failed, using canvas generation...');
     }
     
-    // Option 3: Fallback to canvas generation
-    console.log('🎨 Using canvas-based AI image generation...');
+    // Option 3: Fallback to canvas generation (browser only)
+    if (typeof document === 'undefined') {
+      throw new Error('Canvas generation is not available in this environment.');
+    }
     
     // Parse the prompt to extract key elements for image generation
     const promptWords = request.prompt.toLowerCase().split(' ');
@@ -1571,4 +1583,4 @@ async function generateWithUnsplash(prompt: string): Promise<string | null> {
     console.error('❌ Unsplash image search failed:', error);
     return null;
   }
-}
+} 

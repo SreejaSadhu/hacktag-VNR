@@ -1,527 +1,337 @@
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
-
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-import {
-  Users,
-  Heart,
-
-  ExternalLink,
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  Users, 
+  Search, 
+  Filter, 
+  MessageSquare, 
+  Instagram, 
+  Twitter, 
+  Youtube,
   Star,
   MapPin,
-  Instagram,
-  Youtube,
-
-  Twitter,
+  Users2,
+  TrendingUp
 } from "lucide-react";
 
-type Influencer = {
-  id: number;
+interface Influencer {
+  id: string;
   name: string;
-  handle: string;
-  avatar: string;
-  followers: string;
-  engagement: string;
-  niche: string;
+  platform: string;
+  followers: number;
+  engagement: number;
+  category: string;
   location: string;
-  match_score: number;
-  platforms: string; // comma-separated
-  bio: string;
-  tags: string; // comma-separated
-  profile_url: string;
-};
+  price: number;
+  rating: number;
+  description: string;
+  avatar: string;
+}
 
 export default function InfluencerMatch() {
-  const [activeTab, setActiveTab] = useState("brand");
-  const [influencerResults, setInfluencerResults] = useState<Influencer[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [influencers, setInfluencers] = useState<Influencer[]>([]);
+  const [filteredInfluencers, setFilteredInfluencers] = useState<Influencer[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPlatform, setSelectedPlatform] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Brand form state
-  const [brandForm, setBrandForm] = useState({
-    campaignGoals: "",
-    targetAudience: "",
-    brandTone: "",
-    budget: "",
-  });
-
-  // Influencer signup form state
-  const [signupForm, setSignupForm] = useState({
-    name: "",
-    handle: "",
-    avatar: "https://api.dicebear.com/7.x/identicon/svg?seed=" + Math.random(), // placeholder
-    followers: "",
-    engagement: "",
-    niche: "",
-    location: "",
-    match_score: 80,
-    platforms: "",
-    bio: "",
-    tags: "",
-    profile_url: "",
-  });
-
-  // Fetch all influencers on mount (for initial display)
   useEffect(() => {
-    fetchAllInfluencers();
+    // Generate mock influencer data
+    const mockInfluencers: Influencer[] = [
+      {
+        id: "1",
+        name: "Sarah Johnson",
+        platform: "Instagram",
+        followers: 125000,
+        engagement: 4.2,
+        category: "Lifestyle",
+        location: "Los Angeles, CA",
+        price: 2500,
+        rating: 4.8,
+        description: "Lifestyle and fashion influencer with authentic content and high engagement.",
+        avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        id: "2",
+        name: "Mike Chen",
+        platform: "YouTube",
+        followers: 850000,
+        engagement: 3.8,
+        category: "Tech",
+        location: "San Francisco, CA",
+        price: 5000,
+        rating: 4.6,
+        description: "Tech reviewer and gadget enthusiast with detailed product analysis.",
+        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        id: "3",
+        name: "Emma Davis",
+        platform: "TikTok",
+        followers: 2200000,
+        engagement: 5.1,
+        category: "Beauty",
+        location: "New York, NY",
+        price: 3500,
+        rating: 4.9,
+        description: "Beauty and makeup tutorials with viral content and trendsetting style.",
+        avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        id: "4",
+        name: "Alex Rodriguez",
+        platform: "Instagram",
+        followers: 89000,
+        engagement: 4.5,
+        category: "Fitness",
+        location: "Miami, FL",
+        price: 1800,
+        rating: 4.7,
+        description: "Fitness coach and nutrition expert with transformation success stories.",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        id: "5",
+        name: "Lisa Wang",
+        platform: "YouTube",
+        followers: 450000,
+        engagement: 4.0,
+        category: "Food",
+        location: "Chicago, IL",
+        price: 3200,
+        rating: 4.5,
+        description: "Food blogger and recipe creator with delicious cooking tutorials.",
+        avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face"
+      },
+      {
+        id: "6",
+        name: "David Kim",
+        platform: "TikTok",
+        followers: 1800000,
+        engagement: 4.8,
+        category: "Comedy",
+        location: "Austin, TX",
+        price: 2800,
+        rating: 4.9,
+        description: "Comedy content creator with relatable humor and viral skits.",
+        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face"
+      }
+    ];
+
+    setInfluencers(mockInfluencers);
+    setFilteredInfluencers(mockInfluencers);
+    setIsLoading(false);
   }, []);
 
-  const fetchAllInfluencers = async () => {
-    setLoading(true);
-    setError(null);
-    const { data, error } = await supabase.from("influencers").select("*");
-    if (error) setError(error.message);
-    else setInfluencerResults(data || []);
-    setLoading(false);
-  };
+  useEffect(() => {
+    // Filter influencers based on search and filters
+    let filtered = influencers;
 
-  // Handle brand form changes
-  const handleBrandFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { id, value } = e.target;
-    setBrandForm((prev) => ({ ...prev, [id]: value }));
-  };
-
-  // Find matches based on brand form
-  const handleFindMatches = async () => {
-    setLoading(true);
-    setError(null);
-
-    let query = supabase.from("influencers").select("*");
-
-    // Example: filter by niche (targetAudience) and bio (brandTone)
-    if (brandForm.targetAudience) {
-      query = query.ilike("niche", `%${brandForm.targetAudience}%`);
-    }
-    if (brandForm.brandTone) {
-      query = query.ilike("bio", `%${brandForm.brandTone}%`);
+    if (searchTerm) {
+      filtered = filtered.filter(influencer =>
+        influencer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        influencer.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        influencer.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
-    const { data, error } = await query;
-    if (error) setError(error.message);
-    else setInfluencerResults(data || []);
-    setLoading(false);
-  };
-
-  // Handle influencer signup form changes
-  const handleSignupChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setSignupForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // Handle influencer signup form submit
-  const handleSignupSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    const formToSend = {
-      ...signupForm,
-      platforms: signupForm.platforms,
-      tags: signupForm.tags,
-    };
-    const { error } = await supabase.from("influencers").insert([formToSend]);
-    if (error) {
-      setError(error.message);
-    } else {
-      alert("Thank you for joining the influencer network!");
-      fetchAllInfluencers();
-      setSignupForm({
-        name: "",
-        handle: "",
-        avatar: "https://api.dicebear.com/7.x/identicon/svg?seed=" + Math.random(),
-        followers: "",
-        engagement: "",
-        niche: "",
-        location: "",
-        match_score: 80,
-        platforms: "",
-        bio: "",
-        tags: "",
-        profile_url: "",
-      });
-      setActiveTab("brand");
+    if (selectedPlatform !== "all") {
+      filtered = filtered.filter(influencer => influencer.platform === selectedPlatform);
     }
-    setLoading(false);
-  };
 
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(influencer => influencer.category === selectedCategory);
+    }
+
+    setFilteredInfluencers(filtered);
+  }, [searchTerm, selectedPlatform, selectedCategory, influencers]);
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
-      case "instagram":
+      case "Instagram":
         return <Instagram className="w-4 h-4" />;
-      case "youtube":
+      case "YouTube":
         return <Youtube className="w-4 h-4" />;
-      case "twitter":
-        return <Twitter className="w-4 h-4" />;
+      case "TikTok":
+        return <TrendingUp className="w-4 h-4" />;
       default:
-        return null;
+        return <Users className="w-4 h-4" />;
     }
   };
 
-  const getMatchColor = (score: number) => {
-    if (score >= 90) return "text-success";
-    if (score >= 80) return "text-warning";
-    return "text-muted-foreground";
+  const formatFollowers = (followers: number) => {
+    if (followers >= 1000000) {
+      return `${(followers / 1000000).toFixed(1)}M`;
+    } else if (followers >= 1000) {
+      return `${(followers / 1000).toFixed(1)}K`;
+    }
+    return followers.toString();
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Users className="h-8 w-8 animate-spin mx-auto mb-2" />
+          <p>Loading influencers...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Influencer Match</h1>
-        <p className="text-muted-foreground">
-          Connect with influencers who align perfectly with your brand values and audience.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Influencer Match</h1>
+          <p className="text-muted-foreground">Find the perfect influencers for your brand</p>
+        </div>
+        <Button>
+          <MessageSquare className="mr-2 h-4 w-4" />
+          Contact Selected
+        </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 border-gray-300">
-          <TabsTrigger value="brand">Brand Matching</TabsTrigger>
-          <TabsTrigger value="influencer">Influencer Enrollment</TabsTrigger>
-        </TabsList>
-
-        {/* Brand Matching Tab */}
-        <TabsContent value="brand" className="space-y-6">
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Brand Form */}
-            <Card className="lg:col-span-1 border-0 shadow-soft border-gray-300">
-              <CardHeader className="border-b border-gray-300 pb-4">
-                <CardTitle className="flex items-center">
-                  <Users className="w-5 h-5 mr-2" />
-                  Description
-                </CardTitle>
-                
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-
-                  <Label htmlFor="campaignGoals">Campaign Goals</Label>
-                  <Textarea
-                    id="campaignGoals"
-                    value={brandForm.campaignGoals}
-                    onChange={handleBrandFormChange}
-                    className="border-gray-300"
-                    placeholder="e.g., Increase brand awareness for our new bakery, reach food enthusiasts in local area..."
-                    rows={3}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="targetAudience">Target Audience</Label>
-                  <Input
-                    id="targetAudience"
-                    value={brandForm.targetAudience}
-                    onChange={handleBrandFormChange}
-                    className="border-gray-300"
-                    placeholder="e.g., Food lovers, 25-45, health-conscious"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="brandTone">Brand Tone</Label>
-                  <Input
-                    id="brandTone"
-                    value={brandForm.brandTone}
-                    onChange={handleBrandFormChange}
-                    className="border-gray-300"
-                    placeholder="e.g., Warm, authentic, community-focused"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="budget">Budget Range</Label>
-                  <Input
-                    id="budget"
-                    value={brandForm.budget}
-                    onChange={handleBrandFormChange}
-                    className="border-gray-300"
-                    placeholder="e.g., $500-1000 per post"
-                  />
-                </div>
-                <Button
-                  className="w-full bg-gradient-primary hover:opacity-90"
-                  onClick={handleFindMatches}
-                  disabled={loading}
-                >
-                  {loading ? "Finding..." : "Find Matches"}
-                </Button>
-                <Button
-                  className="w-full mt-2 border-gray-300"
-                  variant="outline"
-                  onClick={fetchAllInfluencers}
-                  disabled={loading}
-                >
-                  Show All Influencers
-
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Results */}
-            <div className="lg:col-span-2 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">
-                  {influencerResults.length} Perfect Matches Found
-                </h3>
-
-                <Button variant="outline" size="sm" disabled className="border-gray-300">
-                  Filter Results
-                </Button>
-              </div>
-              {loading && <p>Loading influencers...</p>}
-              {error && <p className="text-destructive">{error}</p>}
-
-              {influencerResults.map((influencer) => (
-                <Card key={influencer.id} className="border-0 shadow-soft hover-lift border-gray-300">
-                  <CardContent className="p-6">
-                    <div className="flex items-start space-x-4">
-                      <Avatar className="w-16 h-16">
-                        <AvatarImage src={influencer.avatar} />
-
-                        <AvatarFallback>
-                          {influencer.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-
-                      <div className="flex-1 space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <h4 className="font-semibold text-lg">{influencer.name}</h4>
-                              <span className="text-muted-foreground">{influencer.handle}</span>
-                            </div>
-                            <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
-                              <span className="flex items-center">
-                                <MapPin className="w-3 h-3 mr-1" />
-                                {influencer.location}
-                              </span>
-                              <Badge variant="outline" className="border-gray-300">{influencer.niche}</Badge>
-                            </div>
-                          </div>
-                          <div className="text-right">
-
-                            <div className={`text-2xl font-bold ${getMatchColor(influencer.match_score)}`}>
-                              {influencer.match_score}%
-
-                            </div>
-                            <div className="text-xs text-muted-foreground">Match Score</div>
-                          </div>
-                        </div>
-
-                        <p className="text-sm text-muted-foreground">{influencer.bio}</p>
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex space-x-4 text-sm">
-                            <div className="flex items-center">
-                              <Users className="w-4 h-4 mr-1 text-primary" />
-                              <span className="font-medium">{influencer.followers}</span>
-                            </div>
-                            <div className="flex items-center">
-                              <Heart className="w-4 h-4 mr-1 text-destructive" />
-                              <span className="font-medium">{influencer.engagement}</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              {influencer.platforms.split(",").map((platform) => (
-                                <div key={platform} className="text-muted-foreground">
-                                  {getPlatformIcon(platform.trim())}
-
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="flex space-x-2">
-
-                            <Button
-                              size="sm"
-                              className="bg-gradient-primary hover:opacity-90"
-                              onClick={() => {
-                                if (influencer.profile_url) {
-                                  window.open(influencer.profile_url, "_blank", "noopener,noreferrer");
-                                }
-                              }}
-                            >
-
-                              Connect
-                            </Button>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-1">
-                          {influencer.tags.split(",").map((tag, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs border-gray-300">
-                              #{tag.trim()}
-
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+      {/* Search and Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Search className="mr-2 h-5 w-5" />
+            Search & Filters
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-4">
+            <div className="space-y-2">
+              <Label htmlFor="search">Search</Label>
+              <Input
+                id="search"
+                placeholder="Search influencers..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="platform">Platform</Label>
+              <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All platforms" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Platforms</SelectItem>
+                  <SelectItem value="Instagram">Instagram</SelectItem>
+                  <SelectItem value="YouTube">YouTube</SelectItem>
+                  <SelectItem value="TikTok">TikTok</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="Lifestyle">Lifestyle</SelectItem>
+                  <SelectItem value="Tech">Tech</SelectItem>
+                  <SelectItem value="Beauty">Beauty</SelectItem>
+                  <SelectItem value="Fitness">Fitness</SelectItem>
+                  <SelectItem value="Food">Food</SelectItem>
+                  <SelectItem value="Comedy">Comedy</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Results</Label>
+              <div className="text-2xl font-bold">{filteredInfluencers.length}</div>
             </div>
           </div>
-        </TabsContent>
+        </CardContent>
+      </Card>
 
-        {/* Influencer Enrollment Tab */}
-        <TabsContent value="influencer" className="space-y-6">
-          <Card className="max-w-2xl mx-auto border-0 shadow-soft border-gray-300">
-            <CardHeader className="border-b border-gray-300 pb-4">
-              <CardTitle className="flex items-center">
-                <Star className="w-5 h-5 mr-2" />
-                Join as an Influencer
-              </CardTitle>
-              <CardDescription>
-                Connect with brands that align with your values and audience.
-              </CardDescription>
+      {/* Influencers Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {filteredInfluencers.map((influencer) => (
+          <Card key={influencer.id} className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex items-center space-x-3">
+                  <img
+                    src={influencer.avatar}
+                    alt={influencer.name}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                  <div>
+                    <CardTitle className="text-lg">{influencer.name}</CardTitle>
+                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                      {getPlatformIcon(influencer.platform)}
+                      <span>{influencer.platform}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  <span className="text-sm font-medium">{influencer.rating}</span>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">{influencer.description}</p>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="font-medium">{formatFollowers(influencer.followers)}</p>
+                  <p className="text-muted-foreground">Followers</p>
+                </div>
+                <div>
+                  <p className="font-medium">{influencer.engagement}%</p>
+                  <p className="text-muted-foreground">Engagement</p>
+                </div>
+              </div>
 
-              <form onSubmit={handleSignupSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      value={signupForm.name}
-                      onChange={handleSignupChange}
-                      className="border-gray-300"
-                      placeholder="Your name"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="handle">Social Handle</Label>
-                    <Input
-                      id="handle"
-                      name="handle"
-                      value={signupForm.handle}
-                      onChange={handleSignupChange}
-                      className="border-gray-300"
-                      placeholder="@yourusername"
-                      required
-                    />
-                  </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <MapPin className="w-3 h-3" />
+                  <span>{influencer.location}</span>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="niche">Content Niche</Label>
-                  <Input
-                    id="niche"
-                    name="niche"
-                    value={signupForm.niche}
-                    onChange={handleSignupChange}
-                    className="border-gray-300"
-                    placeholder="e.g., Food, Travel, Lifestyle"
-                    required
-                  />
+                <Badge variant="secondary">{influencer.category}</Badge>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-lg font-bold">${influencer.price.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">per post</p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    name="bio"
-                    value={signupForm.bio}
-                    onChange={handleSignupChange}
-                    className="border-gray-300"
-                    placeholder="Tell brands about yourself and your content..."
-                    rows={3}
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="followers">Follower Count</Label>
-                    <Input
-                      id="followers"
-                      name="followers"
-                      value={signupForm.followers}
-                      onChange={handleSignupChange}
-                      className="border-gray-300"
-                      placeholder="e.g., 10K"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="engagement">Engagement Rate</Label>
-                    <Input
-                      id="engagement"
-                      name="engagement"
-                      value={signupForm.engagement}
-                      onChange={handleSignupChange}
-                      className="border-gray-300"
-                      placeholder="e.g., 8.4%"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <Input
-                      id="location"
-                      name="location"
-                      value={signupForm.location}
-                      onChange={handleSignupChange}
-                      className="border-gray-300"
-                      placeholder="City, State"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="profile_url">Profile URL</Label>
-                    <Input
-                      id="profile_url"
-                      name="profile_url"
-                      value={signupForm.profile_url}
-                      onChange={handleSignupChange}
-                      className="border-gray-300"
-                      placeholder="https://instagram.com/yourprofile"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="platforms">Platforms (comma separated)</Label>
-                  <Input
-                    id="platforms"
-                    name="platforms"
-                    value={signupForm.platforms}
-                    onChange={handleSignupChange}
-                    className="border-gray-300"
-                    placeholder="instagram, youtube, twitter"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tags">Tags (comma separated)</Label>
-                  <Input
-                    id="tags"
-                    name="tags"
-                    value={signupForm.tags}
-                    onChange={handleSignupChange}
-                    className="border-gray-300"
-                    placeholder="Food, Recipes, Sustainable"
-                  />
-                </div>
-                <Button className="w-full bg-gradient-primary hover:opacity-90" type="submit" disabled={loading}>
-                  {loading ? "Submitting..." : "Join Influencer Network"}
+                <Button size="sm">
+                  <MessageSquare className="mr-2 h-3 w-3" />
+                  Contact
                 </Button>
-                {error && <p className="text-destructive">{error}</p>}
-              </form>
-
+              </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        ))}
+      </div>
+
+      {filteredInfluencers.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No influencers found</h3>
+            <p className="text-muted-foreground">
+              Try adjusting your search criteria or filters to find more influencers.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
